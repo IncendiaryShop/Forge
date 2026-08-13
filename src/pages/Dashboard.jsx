@@ -13,9 +13,6 @@ import {
   Cell,
   Legend
 } from "recharts";
-import {
-  AlertTriangle, ChevronRight, Info, Landmark,
-} from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { Card, Kpi, EmptyState, ProgressBar, ServiceLogo, AppIcon } from "../components";
 import { CHART_COLORS } from "../utils/constants";
@@ -589,7 +586,8 @@ export function Dashboard() {
 
                 <span className="relative flex items-center">
 
-                  <Info
+                  <AppIcon
+                    name="ui.info"
                     size={13}
                     className="cursor-help text-white/40 transition-colors group-hover:text-white/80"
                   />
@@ -933,7 +931,7 @@ export function Dashboard() {
                 className="forge-link type-button text-accent flex items-center gap-0.5 hover:gap-1"
               >
                 View all
-                <ChevronRight size={13} />
+                <AppIcon name="ui.chevronRight" size={13} />
               </button>
 
             </div>
@@ -988,7 +986,8 @@ export function Dashboard() {
 
                     </div>
 
-                    <ChevronRight
+                    <AppIcon
+                      name="ui.chevronRight"
                       size={16}
                       className="shrink-0 opacity-40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:opacity-80"
                     />
@@ -1034,7 +1033,8 @@ export function Dashboard() {
 
                     </div>
 
-                    <ChevronRight
+                    <AppIcon
+                      name="ui.chevronRight"
                       size={16}
                       className="shrink-0 opacity-40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:opacity-80"
                     />
@@ -1104,7 +1104,7 @@ export function Dashboard() {
               className="forge-link type-button text-accent flex items-center gap-0.5 hover:gap-1"
             >
               View all
-              <ChevronRight size={13} />
+              <AppIcon name="ui.chevronRight" size={13} />
             </button>
 
           </div>
@@ -1602,7 +1602,8 @@ export function Dashboard() {
             budgetTotal > 0 && (
 
               <p className="type-secondary text-red-500 mt-3 flex items-center gap-1">
-                <AlertTriangle
+                <AppIcon
+                  name="ui.warning"
                   size={12}
                 />
                 Over budget this month
@@ -1617,7 +1618,8 @@ export function Dashboard() {
             className="forge-link type-button text-accent flex items-center gap-0.5 mt-5 hover:gap-1"
           >
             Manage budget
-            <ChevronRight
+            <AppIcon
+              name="ui.chevronRight"
               size={13}
             />
           </button>

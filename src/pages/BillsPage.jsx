@@ -1,11 +1,4 @@
 import { useState } from "react";
-import {
-  Plus,
-  CheckCircle2,
-  Pencil,
-  Trash2,
-  CalendarDays,
-} from "lucide-react";
 import { useApp } from "../context/AppContext";
 import {
   Card,
@@ -67,7 +60,7 @@ export function BillsPage() {
     <div className="space-y-6">
       <div className="flex justify-end">
          <PrimaryButton onClick={() => setModal("new")}>
-          <Plus size={18} />
+          <AppIcon name="ui.add" size={18} />
           Add Bill
         </PrimaryButton>
       </div>
@@ -75,12 +68,12 @@ export function BillsPage() {
       <Card>
         {sorted.length === 0 ? (
           <EmptyState
-            icon={CalendarDays}
+            icon={(p) => <AppIcon name="bills.due" {...p} />}
             title="No recurring payments"
             description="Add a recurring bill or subscription to start tracking payments."
             action={
               <PrimaryButton onClick={() => setModal("new")}>
-                <Plus size={18} />
+                <AppIcon name="ui.add" size={18} />
                 Add Bill
               </PrimaryButton>
             }
@@ -106,7 +99,7 @@ export function BillsPage() {
                     }`}
                     title={b.paid ? "Paid" : "Unpaid"}
                   >
-                    {b.paid && <CheckCircle2 size={14} />}
+                    {b.paid && <AppIcon name="bills.paid" size={14} />}
                   </div>
 
                   {/* Brand logo OR semantic bill icon */}
@@ -157,13 +150,13 @@ export function BillsPage() {
                   )}
 
                   <IconBtn
-                    icon={Pencil}
+                    icon="ui.edit"
                     title="Edit"
                     onClick={() => setModal(b)}
                   />
 
                   <IconBtn
-                    icon={Trash2}
+                    icon="ui.delete"
                     danger
                     title="Delete"
                     onClick={() => setDeleteTarget(b)}

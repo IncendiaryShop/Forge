@@ -5,7 +5,7 @@ export function Card({ children, className = "" }) {
 
   return (
     <div className="forge-card">
-      <div className={`forge-card__surface ${theme.card} border rounded-[20px] ${className}`}>
+      <div className={`forge-card__surface ${theme.card} border rounded-[16px] ${className}`}>
         
         {children}
       </div>

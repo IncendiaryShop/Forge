@@ -47,6 +47,16 @@ import {
   faFileInvoice,
   faTableColumns,
   faTriangleExclamation,
+
+  faPlus,
+  faPen,
+  faTrash,
+  faMagnifyingGlass,
+  faDownload,
+  faXmark,
+  faCircleInfo,
+  faChevronRight,
+  faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
 
 /* -------------------------------------------------------------------------
@@ -123,6 +133,16 @@ const ChartPie = fa(faChartPie);
 const ReceiptText = fa(faFileInvoice);
 const LayoutDashboard = fa(faTableColumns);
 const TriangleAlert = fa(faTriangleExclamation);
+
+const Plus = fa(faPlus);
+const Pencil = fa(faPen);
+const Trash2 = fa(faTrash);
+const Search = fa(faMagnifyingGlass);
+const Download = fa(faDownload);
+const XIcon = fa(faXmark);
+const InfoCircle = fa(faCircleInfo);
+const ChevronRight = fa(faChevronRight);
+const LogOut = fa(faRightFromBracket);
 
 
 /* -------------------------------------------------------------------------
@@ -229,6 +249,27 @@ export const ICONS = {
     paid: CircleCheck,
 
     _fallback: Receipt,
+  },
+
+  /* ---------------------------------------------------------------------
+     Generic interface icons — actions, chrome, and status glyphs used
+     across pages/components rather than tied to a specific data domain.
+  --------------------------------------------------------------------- */
+  ui: {
+    add: Plus,
+    edit: Pencil,
+    delete: Trash2,
+    search: Search,
+    download: Download,
+    close: XIcon,
+    info: InfoCircle,
+    chevronRight: ChevronRight,
+    signOut: LogOut,
+    warning: TriangleAlert,
+    trendUp: TrendingUp,
+    trendDown: TrendingDown,
+    checkCircle: CircleCheck,
+    _fallback: InfoCircle,
   },
 };
 

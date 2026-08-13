@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { Card, Badge, PrimaryButton, IconBtn, Modal, EmptyState, Field, Select, GhostButton, TextInput, AppIcon, AccountLogo } from "../components";
 import { InvoiceForm } from "../forms/InvoiceForm";
@@ -102,7 +101,7 @@ export function InvoicesPage() {
     <div className="space-y-8">
       <div className="flex justify-end">
   <PrimaryButton onClick={() => setModal("new")}>
-    <Plus size={15} /> Add Invoice
+    <AppIcon name="ui.add" size={15} /> Add Invoice
   </PrimaryButton>
 </div>
 
@@ -165,10 +164,10 @@ export function InvoicesPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
                         {inv.status !== "Paid" && (
-                          <IconBtn icon={(p) => <AppIcon name="invoiceStates.payment" {...p} />} onClick={() => openPayModal(inv)} title="Mark Paid" />
+                          <IconBtn icon="invoiceStates.payment" onClick={() => openPayModal(inv)} title="Mark Paid" />
                         )}
-                        <IconBtn icon={Pencil} onClick={() => setModal(inv)} title="Edit" />
-                        <IconBtn icon={Trash2} danger onClick={() => requestDelete(inv)} title="Delete" />
+                        <IconBtn icon="ui.edit" onClick={() => setModal(inv)} title="Edit" />
+                        <IconBtn icon="ui.delete" danger onClick={() => requestDelete(inv)} title="Delete" />
                       </div>
                     </td>
                   </tr>
@@ -209,7 +208,7 @@ export function InvoicesPage() {
       {deleteTarget && (
         <Modal title="Delete Invoice" onClose={() => setDeleteTarget(null)}>
           <div className="flex items-start gap-3 mb-5">
-            <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+            <AppIcon name="ui.warning" size={18} className="text-amber-400 shrink-0 mt-0.5" />
             <p className={`type-secondary ${theme.subtext}`}>
               This invoice has a linked financial transaction. Deleting the invoice will <strong>not</strong> delete that transaction — you can remove it separately from Transactions if needed.
             </p>

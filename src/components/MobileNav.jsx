@@ -1,6 +1,6 @@
-import { LogOut } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { NAV } from "../utils/constants";
+import { AppIcon } from "./AppIcon";
 
 export function MobileNav() {
   const { theme, page, setPage, signOut } = useApp();
@@ -19,7 +19,7 @@ export function MobileNav() {
             title={item.label}
             className={`forge-sidebar-nav p-2.5 rounded-[14px] ${active ? "bg-accent/12 text-accent" : theme.subtext}`}
           >
-            <item.icon size={19} />
+            <AppIcon name={item.icon} size={19} />
           </button>
         );
       })}
@@ -31,7 +31,7 @@ export function MobileNav() {
           title="Sign out"
           className={`forge-sidebar-nav p-2.5 rounded-[14px] ${theme.subtext}`}
         >
-          <LogOut size={19} />
+          <AppIcon name="ui.signOut" size={19} />
         </button>
       )}
     </nav>

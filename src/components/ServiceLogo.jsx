@@ -1,4 +1,4 @@
-import { CalendarClock } from "lucide-react";
+import { AppIcon } from "./AppIcon";
 import { getService } from "../utils/serviceRegistry";
 
 const SIZE_CLASSES = {
@@ -24,7 +24,7 @@ export function ServiceLogo({ provider, size = "md", className = "" }) {
 
   return (
     <div className={`${boxCls} bg-white/5`} title={service.name}>
-      <CalendarClock size={iconPx} className="opacity-70" />
+      <AppIcon name="bills.due" size={iconPx} className="opacity-70" />
     </div>
   );
 }

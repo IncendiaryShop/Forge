@@ -24,12 +24,12 @@
      Colors
   ============================ */
 
-  /* Backgrounds */
-  --color-bg: #000000;
-  --color-sidebar: #0E0E0E;
-  --color-content: #080808;
-  --color-card: #171717;
-  --color-elevated: #212121;
+ /* Backgrounds */
+--color-bg: #0A0A0A;
+--color-sidebar: #171717;
+--color-content: #0B0B0B;
+--color-card: ##1c1c1c;
+--color-elevated: #222222;
 
   /* Typography */
   --color-text: #F5F5F5;
@@ -37,29 +37,29 @@
   --color-muted: #808080;
 
   /* Accent */
-  --color-accent: #6D7FD1;
-  --color-accent-hover: #8393DC;
+  --color-accent: #9366E9;
+  --color-accent-hover: #FCFCFC;
   --color-accent-soft: rgba(109,127,209,0.12);
   --color-accent-ambient: rgba(109,127,209,0.08);
   --color-focus: rgba(109,127,209,0.22);
 
   /* Status */
-  --color-success: #22C55E;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
+  --color-success: #4ADE80;
+  --color-warning: #FBBF24;
+  --color-danger: #FF6467;
   --color-info: #60A5FA;
 
   /* Borders */
-  --color-border: rgba(255,255,255,.05);
-  --color-border-hover: rgba(255,255,255,0.08);
+  --color-border: rgba(255,255,255,0.08);
+  --color-border-hover: rgba(255,255,255,0.10);
 
   /* Border Radius */
-  --radius-card: 20px;
+  --radius-card: 12 px;
   --radius-button: 14px;
   --radius-input: 12px;
 
   /* Shadows */
-  --shadow-card: 0 8px 30px rgba(0,0,0,.25);
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.20);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -116,38 +116,31 @@ body {
 .forge-card {
   position: relative;
   isolation: isolate;
-  transition: transform 220ms var(--forge-ease);
 }
 
 .forge-card__surface {
   position: relative;
   height: 100%;
-  background-color: rgba(255, 255, 255, 0.035);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-  transition: background-color 220ms var(--forge-ease), border-color 220ms var(--forge-ease), box-shadow 220ms var(--forge-ease);
-}
 
-.forge-card:hover {
-  transform: translateY(-2px);
-}
+  background: linear-gradient(
+  to bottom,
+  #181818 0%,
+  #1B1B1B 60%,
+  #1F1F1F 100%
+);
 
-.forge-card:hover > .forge-card__surface {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(109, 127, 209, 0.18);
-  box-shadow:
-    inset 0 1px 0 var(--color-accent-ambient),
-    0 8px 20px rgba(0, 0, 0, 0.18),
-    0 18px 45px rgba(0, 0, 0, 0.22),
-    0 0 70px rgba(124, 108, 243, 0.16);
+  border-color: #202020;
+
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.20);
+
+  transition:
+    background-color 220ms var(--forge-ease),
+    border-color 220ms var(--forge-ease),
+    box-shadow 220ms var(--forge-ease);
 }
 
 .forge-sidebar-surface {
-  background: rgba(10, 10, 10, 0.45);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #0e0e0e;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -194,16 +187,14 @@ select {
 
 .forge-button:hover::after { opacity: 1; }
 
-.forge-sidebar-nav {
-  border: 1px solid transparent;
-  transition-property: background-color, border-color, color, box-shadow;
-  transition-duration: 220ms;
-  transition-timing-function: var(--forge-ease);
-}
-
 .forge-sidebar-nav:hover {
   background-color: rgba(255, 255, 255, 0.06);
-  border-color: var(--color-border-hover);
+  border-color: transparent;
+}
+
+.forge-sidebar-nav[aria-current="page"]:hover {
+  background-color: #e7e7e7;
+  border-color: transparent;
 }
 
 .forge-nav-active {
@@ -235,14 +226,14 @@ select {
 }
 
 .forge-control:hover {
-  background-color: color-mix(in srgb, var(--color-elevated) 92%, white);
-  border-color: var(--color-border-hover);
+  background-color: var(--color-elevated);
+  border-color: var(--color-border);
 }
 
 .forge-control:focus {
   outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px var(--color-focus);
+  border-color: var(--color-border-hover);
+  box-shadow: none;
 }
 
 .forge-link {

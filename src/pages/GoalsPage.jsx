@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { Card, PrimaryButton, GhostButton, IconBtn, Field, TextInput, ProgressBar, Modal, EmptyState, AppIcon } from "../components";
 import { GoalForm } from "../forms/GoalForm";
@@ -32,7 +31,7 @@ export function GoalsPage() {
   return (
     <div className="space-y-8">
       <div className="flex justify-end">
-        <PrimaryButton onClick={() => setModal("new")}><Plus size={15} /> Add Goal</PrimaryButton>
+        <PrimaryButton onClick={() => setModal("new")}><AppIcon name="ui.add" size={15} /> Add Goal</PrimaryButton>
       </div>
       {data.goals.length === 0 ? (
         <Card className="p-7"><EmptyState icon={(p) => <AppIcon name="goals.savings" {...p} />} title="No savings goals" subtitle="Set a goal to start tracking progress" /></Card>
@@ -47,8 +46,8 @@ export function GoalsPage() {
                     <AppIcon name="goals.savings" size={17} className="forge-card-icon__glyph" />
                   </div>
                   <div className="forge-card-actions flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                    <IconBtn icon={Pencil} onClick={() => setModal(g)} title="Edit" />
-                    <IconBtn icon={Trash2} danger onClick={() => setDeleteTarget(g)} title="Delete" />
+                    <IconBtn icon="ui.edit" onClick={() => setModal(g)} title="Edit" />
+                    <IconBtn icon="ui.delete" danger onClick={() => setDeleteTarget(g)} title="Delete" />
                   </div>
                 </div>
                 <p className="type-body font-semibold mt-4">{g.name}</p>
@@ -91,7 +90,7 @@ export function GoalsPage() {
       {deleteTarget && (
         <Modal title="Delete Goal" onClose={() => setDeleteTarget(null)}>
           <div className="flex items-start gap-3 mb-5">
-            <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+            <AppIcon name="ui.warning" size={18} className="text-amber-400 shrink-0 mt-0.5" />
             <p className={`type-secondary ${theme.subtext}`}>
               Are you sure you want to delete <strong>{deleteTarget.name}</strong>? This cannot be undone.
             </p>

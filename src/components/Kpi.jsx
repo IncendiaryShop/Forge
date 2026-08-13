@@ -1,4 +1,4 @@
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { AppIcon } from "./AppIcon";
 import { useApp } from "../context/AppContext";
 import { Card } from "./Card";
 
@@ -14,8 +14,8 @@ export function Kpi({ label, value, sub, trend, icon: Icon }) {
           <p className="type-display-number mt-3">{value}</p>
           {sub && (
             <p className={`type-secondary mt-3 flex items-center gap-1 ${trend === "up" ? "text-emerald-500" : trend === "down" ? "text-red-500" : theme.faint}`}>
-              {trend === "up" && <ArrowUpRight size={12} />}
-              {trend === "down" && <ArrowDownRight size={12} />}
+              {trend === "up" && <AppIcon name="ui.trendUp" size={12} />}
+              {trend === "down" && <AppIcon name="ui.trendDown" size={12} />}
               {sub}
             </p>
           )}

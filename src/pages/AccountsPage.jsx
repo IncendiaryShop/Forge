@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { Card, PrimaryButton, GhostButton, IconBtn, Modal, AccountLogo } from "../components";
+import { Card, PrimaryButton, GhostButton, IconBtn, Modal, AccountLogo, AppIcon } from "../components";
 import { AccountForm } from "../forms/AccountForm";
 import { fmt } from "../utils/helpers";
 
@@ -26,7 +25,7 @@ export function AccountsPage() {
   return (
     <div className="space-y-8">
       <div className="flex justify-end">
-        <PrimaryButton onClick={() => setModal("new")}><Plus size={15} /> Add Account</PrimaryButton>
+        <PrimaryButton onClick={() => setModal("new")}><AppIcon name="ui.add" size={15} /> Add Account</PrimaryButton>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {data.accounts.map(a => {
@@ -36,8 +35,8 @@ export function AccountsPage() {
               <div className="flex items-start justify-between">
                 <AccountLogo account={a} size="md" />
                 <div className="forge-card-actions flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                  <IconBtn icon={Pencil} onClick={() => setModal(a)} title="Edit" />
-                  <IconBtn icon={Trash2} danger onClick={() => requestDelete(a)} title="Delete" />
+                  <IconBtn icon="ui.edit" onClick={() => setModal(a)} title="Edit" />
+                  <IconBtn icon="ui.delete" danger onClick={() => requestDelete(a)} title="Delete" />
                 </div>
               </div>
               <p className="type-body font-semibold mt-4">{a.name}</p>
@@ -55,7 +54,7 @@ export function AccountsPage() {
       {deleteTarget && (
         <Modal title="Delete Account" onClose={() => setDeleteTarget(null)}>
           <div className="flex items-start gap-3 mb-5">
-            <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+            <AppIcon name="ui.warning" size={18} className="text-amber-400 shrink-0 mt-0.5" />
             {deleteTarget.refCount > 0 ? (
               <p className={`type-secondary ${theme.subtext}`}>
                 <strong>{deleteTarget.account.name}</strong> is referenced by {deleteTarget.refCount} transaction{deleteTarget.refCount === 1 ? "" : "s"}. Deleting it would leave those transactions pointing at a missing account, so deletion is blocked. Reassign or remove those transactions first.

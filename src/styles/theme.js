@@ -8,7 +8,7 @@ export const theme = {
 
   content: "bg-content",
 
-  card: "bg-card border-border",
+  card: "bg-[#181818] border-white/[0.08]",
 
   cardHover: "hover:bg-elevated",
 

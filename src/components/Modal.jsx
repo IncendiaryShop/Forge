@@ -1,5 +1,5 @@
 import { useEffect, useRef, useId } from "react";
-import { X } from "lucide-react";
+import { AppIcon } from "./AppIcon";
 import { useApp } from "../context/AppContext";
 
 export function Modal({ title, onClose, children, wide }) {
@@ -34,7 +34,7 @@ export function Modal({ title, onClose, children, wide }) {
         className={`forge-modal w-full ${wide ? "max-w-xl" : "max-w-md"} max-h-[85vh] overflow-y-auto rounded-[20px] border ${theme.card} p-7 shadow-xl shadow-black/30 outline-none`}>
         <div className="flex items-center justify-between mb-6">
           <h3 id={titleId} className="type-section-title">{title}</h3>
-          <button type="button" onClick={onClose} aria-label="Close" className={`forge-button p-1.5 rounded-[10px] ${theme.hover}`}><X size={18} /></button>
+          <button type="button" onClick={onClose} aria-label="Close" className={`forge-button p-1.5 rounded-[10px] ${theme.hover}`}><AppIcon name="ui.close" size={18} /></button>
         </div>
         {children}
       </div>

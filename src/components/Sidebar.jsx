@@ -1,19 +1,8 @@
 import ForgeLogo from "../assets/forge_logo.svg";
-import { LogOut } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { NAV } from "../utils/constants";
 import { computeBillStatus } from "../utils/billCycle";
 import { AppIcon } from "./AppIcon";
-
-const NAV_ICON = {
-  dashboard: "dashboard.home",
-  transactions: "dashboard.recent",
-  accounts: "accountTypes.bank",
-  budget: "dashboard.budget",
-  bills: "bills.subscription",
-  invoices: "dashboard.invoices",
-  goals: "goals.savings",
-};
 
 export function Sidebar() {
   const { theme, page, setPage, data, signOut } = useApp();
@@ -23,14 +12,29 @@ export function Sidebar() {
 
   const billsDueSoon = data.bills.filter((b) => {
     if (b.paid) return false;
+
     const { daysOut, overdue } = computeBillStatus(b, today);
+
     return overdue || (daysOut >= 0 && daysOut <= 5);
   }).length;
 
   return (
     <aside
-  className={`sticky top-0 h-screen w-[240px] shrink-0 border-r border-white/5 flex flex-col ${theme.sidebar} hidden md:flex`}
->
+      className="
+        sticky
+        top-0
+        h-screen
+        w-[240px]
+        shrink-0
+        flex
+        flex-col
+        bg-[#0e0e0e]
+        border-r
+        border-white/[0.06]
+        hidden
+        md:flex
+      "
+    >
       {/* ================= Brand ================= */}
       <div className="px-6 pt-8 pb-7 flex justify-center">
         <img
@@ -52,25 +56,44 @@ export function Sidebar() {
               type="button"
               onClick={() => setPage(item.id)}
               aria-current={active ? "page" : undefined}
-              className={`forge-sidebar-nav type-button w-full flex items-center gap-3 px-4 h-11 rounded-2xl transition-all duration-200 ease-out border ${
-                active
-                  ? "bg-accent/10 border-accent/20 text-accent shadow-[0_0_24px_rgba(101,120,200,0.18)]"
-                  : `border-transparent ${theme.subtext} hover:bg-white/[0.03] hover:border-white/10 hover:text-text hover:-translate-y-[1px] hover:shadow-[0_10px_25px_rgba(0,0,0,0.25)]`
-              }`}
+              className={`forge-sidebar-nav type-button w-full flex items-center gap-3 px-4 h-11 rounded-[8px] transition-all duration-200 ease-out border ${
+  active
+    ? "bg-[#9366E9] border-transparent text-[#171717]"
+    : "border-transparent text-white hover:bg-white/[0.04] hover:border-transparent hover:text-white"
+}`}
             >
-              <AppIcon name={NAV_ICON[item.id]} size={15} strokeWidth={1.8} />
+              <AppIcon
+                name={item.icon}
+                size={15}
+              />
 
-              <span className="flex-1 text-left text-[15px] font-medium tracking-[-0.01em]">
+              <span className="flex-1 text-left text-[15px] font-normal tracking-[-0.01em]">
                 {item.label}
               </span>
 
               {item.id === "bills" &&
-                billsDueSoon > 0 &&
-                !active && (
-                  <span className="min-w-[22px] h-[22px] flex items-center justify-center rounded-full bg-accent/15 text-accent text-[10px] font-semibold">
-                    {billsDueSoon}
-                  </span>
-                )}
+  billsDueSoon > 0 &&
+  !active && (
+    <span
+      className="
+        min-w-[20px]
+        h-[20px]
+        px-1.5
+        flex
+        items-center
+        justify-center
+        rounded-full
+        bg-white/[0.7]
+        border
+        border-white/[0.10]
+        text-[#171717]
+        text-[11px]
+        font-mono
+      "
+    >
+      {billsDueSoon}
+    </span>
+  )}
             </button>
           );
         })}
@@ -82,10 +105,35 @@ export function Sidebar() {
           <button
             type="button"
             onClick={signOut}
-            className={`forge-sidebar-nav type-button w-full flex items-center gap-3 px-4 h-11 rounded-2xl border border-transparent ${theme.subtext} hover:bg-white/[0.03] hover:border-white/10 hover:text-text transition-all duration-200 ease-out`}
+            className="
+              forge-sidebar-nav
+              type-button
+              w-full
+              flex
+              items-center
+              gap-3
+              px-4
+              h-11
+              rounded-2xl
+              border
+              border-transparent
+              text-white
+              hover:bg-white/[0.04]
+              hover:border-white/[0.06]
+              hover:text-white
+              transition-all
+              duration-200
+              ease-out
+            "
           >
-            <LogOut size={15} strokeWidth={1.8} />
-            <span className="flex-1 text-left text-[15px] font-medium tracking-[-0.01em]">Sign out</span>
+            <AppIcon
+              name="ui.signOut"
+              size={15}
+            />
+
+            <span className="flex-1 text-left text-[15px] font-normal tracking-[-0.01em]">
+              Sign out
+            </span>
           </button>
         </div>
       )}

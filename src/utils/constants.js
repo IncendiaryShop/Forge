@@ -1,5 +1,3 @@
-import { LayoutDashboard, Receipt, Landmark, PiggyBank, CalendarDays, Target, FileText } from "lucide-react";
-
 /* ----------------------------- constants ----------------------------- */
 
 export const INCOME_CATEGORIES = ["Salary", "Freelance", "Bonus", "Interest", "Cashback", "Refund", "Gift", "Dividend", "Rental", "Other"];
@@ -16,13 +14,13 @@ export const CHART_COLORS = [
 export const STORAGE_KEY = "finance-tracker-data-v1";
 
 export const NAV = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "transactions", label: "Transactions", icon: Receipt },
-  { id: "accounts", label: "Accounts", icon: Landmark },
-  { id: "budget", label: "Budget", icon: Target },
-  { id: "bills", label: "Recurring", icon: CalendarDays },
-  { id: "invoices", label: "Invoices", icon: FileText },
-  { id: "goals", label: "Savings Goals", icon: PiggyBank },
+  { id: "dashboard", label: "Dashboard", icon: "dashboard.home" },
+  { id: "transactions", label: "Transactions", icon: "dashboard.recent" },
+  { id: "accounts", label: "Accounts", icon: "accountTypes.bank" },
+  { id: "budget", label: "Budget", icon: "dashboard.budget" },
+  { id: "bills", label: "Recurring", icon: "bills.subscription" },
+  { id: "invoices", label: "Invoices", icon: "dashboard.invoices" },
+  { id: "goals", label: "Savings Goals", icon: "goals.savings" },
 ];
 
 export const PAGE_TITLES = { dashboard: "Dashboard", transactions: "Transactions", accounts: "Accounts", budget: "Monthly Budget", bills: "Recurring", invoices: "Invoices", goals: "Savings Goals" };

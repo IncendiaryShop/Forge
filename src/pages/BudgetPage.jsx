@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import {
   Card,
@@ -236,7 +235,7 @@ export function BudgetPage() {
 
                     <div className="forge-card-actions flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <IconBtn
-                        icon={Pencil}
+                        icon="ui.edit"
                         title="Edit"
                         onClick={() =>
                           setModal({
@@ -247,7 +246,7 @@ export function BudgetPage() {
                       />
 
                       <IconBtn
-                        icon={Trash2}
+                        icon="ui.delete"
                         danger
                         title="Delete"
                         onClick={() => setDeleteTarget(r)}
@@ -313,7 +312,8 @@ export function BudgetPage() {
           onClose={() => setDeleteTarget(null)}
         >
           <div className="flex items-start gap-3 mb-5">
-            <AlertTriangle
+            <AppIcon
+              name="ui.warning"
               size={18}
               className="text-amber-400 shrink-0 mt-0.5"
             />

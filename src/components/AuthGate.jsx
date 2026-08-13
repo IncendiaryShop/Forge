@@ -82,8 +82,6 @@ export function AuthGate() {
           colorMode="molten"
           grain
           grainIntensity={0.05}
-          mouseInteraction
-          mouseStrength={0.3}
           opacity={1}
         />
       </div>
@@ -373,39 +371,42 @@ export function AuthGate() {
         )}
 
         {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={busy}
-          className="
-            forge-button
-            type-button
-            w-full
-            justify-center
-            inline-flex
-            items-center
-            gap-1.5
-            bg-accent
-            hover:bg-accent-hover
-            active:bg-accent/80
-            text-white
-            px-4
-            py-2.5
-            rounded-[14px]
-            border
-            border-white/10
-            shadow-[0_0_18px_rgba(124,108,243,0.22)]
-            hover:shadow-[0_0_30px_rgba(124,108,243,0.48)]
-            disabled:opacity-60
-            transition-all
-            duration-300
-          "
-        >
-          {busy
-            ? "Please wait…"
-            : mode === "signup"
-              ? "Create account"
-              : "Sign in"}
-        </button>
+<button
+  type="submit"
+  disabled={busy}
+  className="
+    forge-button
+    specular-button
+    type-button
+    w-full
+    justify-center
+    inline-flex
+    items-center
+    gap-1.5
+    bg-accent
+    hover:bg-accent-hover
+    active:bg-accent/80
+    text-white
+    px-4
+    py-2.5
+    rounded-[14px]
+    border
+    border-white/10
+    shadow-[0_0_18px_rgba(124,108,243,0.22)]
+    hover:shadow-[0_0_30px_rgba(124,108,243,0.48)]
+    disabled:opacity-60
+    transition-all
+    duration-300
+  "
+>
+  <span className="specular-button__shine" aria-hidden="true" />
+
+  {busy
+    ? "Please wait…"
+    : mode === "signup"
+      ? "Create account"
+      : "Sign in"}
+</button>
 
         {/* Sign In / Sign Up Toggle */}
         <button

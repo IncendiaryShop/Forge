@@ -331,29 +331,6 @@ function AuthenticatedApp({ userId, onSignOut }) {
     <AppCtx.Provider value={ctx}>
       <ErrorBanner message={actionError} onDismiss={() => setActionError("")} />
       <div className={`relative min-h-screen flex font-sans ${theme.app}`}>
-        <div className="fixed inset-0 z-0 pointer-events-none">
-          <MoltenMetal
-            color1="#1c1c1c"
-            color2="#7C6CF3"
-            color3="#FFFFFF"
-            speed={0.2}
-            scale={3.6}
-            detail={5}
-            glow={1.7}
-            coreSize={0.11}
-            swirl={1}
-            fold={-0.2}
-            blackPoint={0.05}
-            brightness={1}
-            colorMode="molten"
-            grain
-            grainIntensity={0.05}
-            mouseInteraction
-            mouseStrength={0.3}
-            opacity={1}
-          />
-        </div>
-
         <div className="relative z-10">
           <Sidebar />
         </div>

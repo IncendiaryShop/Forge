@@ -1,6 +1,8 @@
 import { siHdfcbank, siIcicibank, siAxisbank, siHsbc } from "simple-icons";
 import sbiLogo from "../assets/banks/sbi_logo.svg";
 import bobLogo from "../assets/banks/bob_logo.svg";
+import idfcLogo from "../assets/banks/idfc_logo.svg";
+
 
 /* -------------------------------------------------------------------------
    Centralized bank/provider registry for ACCOUNT visual identity.
@@ -35,6 +37,7 @@ export const BANKS = [
   { id: "kotak", name: "Kotak Mahindra Bank", icon: null },
   { id: "yesbank", name: "Yes Bank", icon: null },
   { id: "indusind", name: "IndusInd Bank", icon: null },
+  { id: "idfc", name: "IDFC FIRST Bank", icon: { image: idfcLogo } },
   { id: "other", name: "Other / Custom", icon: null },
 ];
 

@@ -1,7 +1,17 @@
 import { useMemo, useState, useCallback } from "react";
 import {
-  ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  PieChart, Pie, Cell, Legend
+  ResponsiveContainer,
+  ComposedChart,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
 } from "recharts";
 import {
   AlertTriangle, ChevronRight, Info, Landmark,
@@ -18,7 +28,7 @@ const tooltipStyle = {
   border: "1px solid rgba(245,245,247,0.08)",
   borderRadius: 14,
   fontSize: 13,
-  fontFamily: "Manrope",
+  fontFamily: "Mona Sans",
   color: "#F5F5F7",
   boxShadow: "0 8px 24px -8px rgba(0,0,0,0.4)",
 };
@@ -415,39 +425,35 @@ export function Dashboard() {
   ]);
 
   const { yDomainMin, yDomainMax } = useMemo(() => {
-    let maxAbs = 0;
-    let minVal = 0;
+  const maxTransaction = transactions.reduce(
+    (max, t) => Math.max(max, Math.abs(Number(t.amount) || 0)),
+    0
+  );
 
-    cashFlowData.forEach((d) => {
-      maxAbs = Math.max(
-        maxAbs,
-        Math.abs(d.Income),
-        Math.abs(d.Expenses),
-        Math.abs(d["Net Cash Flow"])
-      );
+  let minVal = 0;
 
-      minVal = Math.min(
-        minVal,
-        d["Net Cash Flow"]
-      );
-    });
+  cashFlowData.forEach((d) => {
+    minVal = Math.min(
+      minVal,
+      d["Net Cash Flow"]
+    );
+  });
 
-    const top =
-      maxAbs > 0
-        ? niceCeil(maxAbs * 1.15)
-        : 100;
+  const top =
+    maxTransaction > 0
+      ? niceCeil(maxTransaction)
+      : 100;
 
-    const bottom =
-      minVal < 0
-        ? -niceCeil(Math.abs(minVal) * 1.15)
-        : 0;
+  const bottom =
+    minVal < 0
+      ? -niceCeil(Math.abs(minVal) * 1.15)
+      : 0;
 
-    return {
-      yDomainMin: bottom,
-      yDomainMax: top
-    };
-  }, [cashFlowData]);
-
+  return {
+    yDomainMin: bottom,
+    yDomainMax: top
+  };
+}, [transactions, cashFlowData]);
   const selectCls = `forge-control px-2.5 py-1.5 rounded-[10px] border text-[13px] outline-none w-auto ${theme.input}`;
 
   const recent = sortTransactionsDesc(transactions).slice(0, 5);
@@ -771,6 +777,45 @@ export function Dashboard() {
                       left: -8
                     }}
                   >
+                  <defs>
+  <linearGradient
+    id="incomeGradient"
+    x1="0"
+    y1="0"
+    x2="0"
+    y2="1"
+  >
+    <stop
+      offset="0%"
+      stopColor="#C5B4FB"
+      stopOpacity={0.3}
+    />
+    <stop
+      offset="100%"
+      stopColor="#C5B4FB"
+      stopOpacity={0}
+    />
+  </linearGradient>
+
+  <linearGradient
+    id="expenseGradient"
+    x1="0"
+    y1="0"
+    x2="0"
+    y2="1"
+  >
+    <stop
+      offset="0%"
+      stopColor="#60269D"
+      stopOpacity={0.45}
+    />
+    <stop
+      offset="100%"
+      stopColor="#60269D"
+      stopOpacity={0}
+    />
+  </linearGradient>
+</defs>
 
                     <CartesianGrid
                       strokeDasharray="2 4"
@@ -783,7 +828,7 @@ export function Dashboard() {
                       tick={{
                         fontSize: 12,
                         fill: "#808080",
-                        fontFamily: "Manrope"
+                        fontFamily: "Mona Sans"
                       }}
                       axisLine={false}
                       tickLine={false}
@@ -798,7 +843,7 @@ export function Dashboard() {
                       tick={{
                         fontSize: 11,
                         fill: "#808080",
-                        fontFamily: "Manrope"
+                        fontFamily: "Mona Sans"
                       }}
                       axisLine={false}
                       tickLine={false}
@@ -820,24 +865,36 @@ export function Dashboard() {
                     <Legend
                       wrapperStyle={{
                         fontSize: 12,
-                        fontFamily: "Manrope",
+                        fontFamily: "Mona Sans",
                         paddingTop: 8
                       }}
                     />
 
-                    <Bar
-                      dataKey="Income"
-                      fill="#22c55e"
-                      radius={[6, 6, 0, 0]}
-                      barSize={18}
-                    />
+                    <Area
+  type="monotone"
+  dataKey="Income"
+  stroke="#C5B4FB"
+  strokeWidth={1.5}
+  fill="url(#incomeGradient)"
+  dot={false}
+  activeDot={{
+    r: 4,
+    strokeWidth: 0
+  }}
+/>
 
-                    <Bar
-                      dataKey="Expenses"
-                      fill="#7C6CF3"
-                      radius={[6, 6, 0, 0]}
-                      barSize={18}
-                    />
+<Area
+  type="monotone"
+  dataKey="Expenses"
+  stroke="#60269D"
+  strokeWidth={1.5}
+  fill="url(#expenseGradient)"
+  dot={false}
+  activeDot={{
+    r: 4,
+    strokeWidth: 0
+  }}
+/>
 
                     <Line
                       type="monotone"
@@ -923,7 +980,7 @@ export function Dashboard() {
                         {invoiceSummary.unpaid.count} Unpaid
                       </p>
 
-                      <p className="text-[22px] font-extrabold tracking-[-0.01em] text-rose-400 mt-0.5">
+                      <p className="text-[22px] font-bold tracking-[-0.01em] text-rose-400 mt-0.5">
                         {fmt(
                           invoiceSummary.unpaid.amount
                         )}
@@ -969,7 +1026,7 @@ export function Dashboard() {
                         {invoiceSummary.paid.count} Paid
                       </p>
 
-                      <p className="text-[22px] font-extrabold tracking-[-0.01em] text-emerald-400 mt-0.5">
+                      <p className="text-[22px] font-bold tracking-[-0.01em] text-emerald-400 mt-0.5">
                         {fmt(
                           invoiceSummary.paid.amount
                         )}
@@ -1010,7 +1067,7 @@ export function Dashboard() {
                         Total Invoices
                       </p>
 
-                      <p className="text-[22px] font-extrabold tracking-[-0.01em] mt-0.5">
+                      <p className="text-[22px] font-bold tracking-[-0.01em] mt-0.5">
                         {invoiceSummary.totalCount}
                       </p>
 
@@ -1121,7 +1178,7 @@ export function Dashboard() {
                   </div>
 
                   <p
-                    className={`text-[17px] font-extrabold tracking-[-0.01em] shrink-0 ${
+                    className={`text-[17px] font-bold tracking-[-0.01em] shrink-0 ${
                       t.type === "Income"
                         ? "text-emerald-500"
                         : ""
@@ -1242,7 +1299,7 @@ export function Dashboard() {
                           {statusLabel(p)}
                         </p>
 
-                        <p className="text-[16px] font-extrabold tracking-[-0.01em]">
+                        <p className="text-[16px] font-bold tracking-[-0.01em]">
                           {fmt(p.amount)}
                         </p>
 
@@ -1364,7 +1421,7 @@ export function Dashboard() {
                     Total Spent
                   </p>
 
-                  <p className="text-[15px] font-extrabold tracking-[-0.01em]">
+                  <p className="text-[15px] font-bold tracking-[-0.01em]">
                     {fmt(
                       categorySpend.reduce(
                         (s, c) =>

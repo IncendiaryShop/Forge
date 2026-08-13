@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: "Manrope";
-  src: url("/fonts/Manrope-VariableFont_wght.ttf") format("truetype");
+  font-family: "Mona Sans";
+  src: url("/fonts/MonaSans-VariableFont_wdth,wght.ttf") format("truetype");
   font-style: normal;
-  font-weight: 200 800;
+  font-weight: 200 900;
   font-display: swap;
 }
 
@@ -18,7 +18,7 @@
      Typography
   ============================ */
 
-  --font-sans: "Manrope";
+  ---font-sans: "Mona Sans";
 
   /* ============================
      Colors
@@ -300,5 +300,51 @@ select {
   .forge-modal {
     animation: none;
     transition-duration: 0ms;
+  }
+}
+/* ------------------------------------------------------------------
+   Forge — Specular Button Effect
+   ------------------------------------------------------------------ */
+
+.specular-button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.specular-button__shine {
+  position: absolute;
+  inset: -100% -35%;
+  width: 32%;
+  height: 300%;
+  pointer-events: none;
+  z-index: 0;
+
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.03) 75%,
+    transparent 100%
+  );
+
+  transform: translateX(-250%) rotate(18deg);
+  animation: forge-specular-sweep 3.8s ease-in-out infinite;
+}
+
+.specular-button > *:not(.specular-button__shine) {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes forge-specular-sweep {
+  0% {
+    transform: translateX(-250%) rotate(18deg);
+  }
+
+  35%,
+  100% {
+    transform: translateX(450%) rotate(18deg);
   }
 }

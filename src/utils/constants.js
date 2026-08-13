@@ -5,7 +5,14 @@ import { LayoutDashboard, Receipt, Landmark, PiggyBank, CalendarDays, Target, Fi
 export const INCOME_CATEGORIES = ["Salary", "Freelance", "Bonus", "Interest", "Cashback", "Refund", "Gift", "Dividend", "Rental", "Other"];
 export const EXPENSE_CATEGORIES = ["Food", "Groceries", "Transportation", "Fuel", "Rent", "Utilities", "Medical", "Insurance", "Shopping", "Travel", "Entertainment", "Education", "Subscriptions", "Family", "EMI", "Miscellaneous"];
 export const ACCOUNT_TYPES = ["Bank", "Cash", "Wallet", "Credit Card", "Fixed Deposit", "Investment"];
-export const CHART_COLORS = ["#7C6CF3", "#0ea5e9", "#22c55e", "#a855f7", "#eab308", "#ef4444", "#14b8a6", "#f43f5e", "#6366f1", "#84cc16", "#f59e0b", "#64748b"];
+export const CHART_COLORS = [
+  "#60269d",
+"#7344b1",
+"#8660c4",
+"#9a7cd7",
+"#af98e9",
+"#c5b4fb"
+];
 export const STORAGE_KEY = "finance-tracker-data-v1";
 
 export const NAV = [

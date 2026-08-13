@@ -118,8 +118,6 @@ const MoltenMetal = ({
   colorMode = 'molten',
   grain = true,
   grainIntensity = 0.05,
-  mouseInteraction = true,
-  mouseStrength = 0.3,
   opacity = 1.0,
   className = ''
 }) => {
@@ -286,8 +284,6 @@ const MoltenMetal = ({
     u.uGrain.value = grain ? 1 : 0;
     u.uGrainIntensity.value = grainIntensity;
     u.uOpacity.value = opacity;
-    u.uMouseStrength.value = mouseStrength;
-    u.uEnableMouse.value = mouseInteraction;
     const c1 = hexToRgb(color1);
     const c2 = hexToRgb(color2);
     const c3 = hexToRgb(color3);
@@ -319,8 +315,6 @@ const MoltenMetal = ({
     colorMode,
     grain,
     grainIntensity,
-    mouseInteraction,
-    mouseStrength,
     opacity
   ]);
 

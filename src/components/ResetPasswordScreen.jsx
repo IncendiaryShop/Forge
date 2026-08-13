@@ -61,8 +61,6 @@ export function ResetPasswordScreen() {
           colorMode="molten"
           grain
           grainIntensity={0.05}
-          mouseInteraction
-          mouseStrength={0.3}
           opacity={1}
         />
       </div>

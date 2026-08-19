@@ -1,16 +1,87 @@
-# React + Vite
+# Forge
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> A modern personal finance management application built to help users track accounts, transactions, budgets, bills, credit cards, EMIs, loans, invoices, and financial goals in one place.
 
-Currently, two official plugins are available:
+![Forge Dashboard](./public/dashboard-preview.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Overview
 
-## React Compiler
+**Forge** is a full-featured personal finance management platform designed around accurate financial tracking and clear separation between different types of accounts and financial operations.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The application supports everything from everyday income and expenses to more complex financial workflows such as:
 
-## Expanding the ESLint configuration
+- Credit card limits and outstanding balances
+- Credit card EMI conversion and pre-closure
+- Credit card statements and billing cycles
+- Loan accounts, disbursement, repayment schedules, and pre-closure
+- Recurring bills and upcoming payments
+- Budget and category-based spending analysis
+- Invoice tracking
+- Savings goals
+- Secure user-level data isolation
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Forge is built with a focus on **correct accounting behavior, data consistency, validation, and financial integrity**.
+
+---
+
+# ✨ Features
+
+## 📊 Dashboard
+
+A centralized financial overview providing:
+
+- Total balance across eligible accounts
+- Monthly income
+- Monthly expenses
+- Cash flow visualization
+- Spending breakdown by category
+- Budget usage and remaining budget
+- Recent transactions
+- Invoice summary
+- Upcoming payments and EMI payments in a combined widget
+- Quick navigation to relevant sections
+
+### Upcoming Widget
+
+Upcoming Bills and EMI Payments are presented inside a single widget with tab-based navigation.
+
+- **Payments** tab
+- **EMI Payments** tab
+
+This keeps related upcoming financial obligations in one place without duplicating underlying logic.
+
+---
+
+# 💳 Account Management
+
+Forge supports multiple account types:
+
+- 🏦 Bank
+- 💵 Cash
+- 💳 Credit Card
+- 🏠 Loan
+- 📈 Investment
+- 🏦 Fixed Deposit
+
+Each account type follows its own financial behavior and validation rules.
+
+---
+
+## Bank & Cash Accounts
+
+Supports:
+
+- Opening balance
+- Income tracking
+- Expense tracking
+- Transfers
+- Insufficient funds protection
+
+Balance calculation:
+
+```text
+Opening Balance
++ Income
+- Expenses
+- Outgoing Transfers
++ Incoming Transfers

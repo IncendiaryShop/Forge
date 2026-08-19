@@ -30,7 +30,7 @@ const toRow = (t) => ({
 
 export async function listTransactions() {
   const { data, error } = await call(
-    supabase.from("transactions").select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
+    supabase.from("transactions").select("*").order("date", { ascending: false }).order("created_at", { ascending: false }).order("id", { ascending: false }),
     "Couldn't load transactions."
   );
   return { data: data ? data.map(fromRow) : null, error };

@@ -13,3 +13,5 @@ export { Kpi } from "./Kpi";
 export { ServiceLogo } from "./ServiceLogo";
 export { AppIcon } from "./AppIcon";
 export { AccountLogo } from "./AccountLogo";
+export { EmiSchedule } from "./EmiSchedule";
+export { LoanSchedule } from "./LoanSchedule";

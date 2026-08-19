@@ -5,7 +5,6 @@ import { InvoiceForm } from "../forms/InvoiceForm";
 import { fmt, todayISO } from "../utils/helpers";
 
 const STATUS_STYLES = {
-  OVERDUE: "bg-rose-500/15 text-rose-300",
   UNPAID: "bg-amber-500/15 text-amber-300",
   PAID: "bg-emerald-500/15 text-emerald-300",
 };
@@ -15,7 +14,7 @@ function getInvoiceInfo(invoice, today) {
     return { group: 2, label: "PAID", sub: invoice.paymentDate ? `Paid ${invoice.paymentDate}` : "" };
   }
   if (invoice.invoiceDate < today) {
-    return { group: 0, label: "OVERDUE", sub: "" };
+    return { group: 0, label: "UNPAID", sub: "" };
   }
   if (invoice.invoiceDate === today) {
     return { group: 1, label: "UNPAID", sub: "Due Today" };
@@ -137,9 +136,9 @@ export function InvoicesPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-base">
               <thead>
-                <tr className={`type-small-label text-left uppercase ${theme.tableHeader} border-b ${theme.rowBorder}`}>
+                <tr className={`type-small-label text-left text-white uppercase ${theme.tableHeader} border-b ${theme.rowBorder}`}>
                   <th className="px-6 py-4">Invoice</th>
-                  <th className="px-6 py-4">Client</th>
+                  <th className="px-6 py-4 ">Client</th>
                   <th className="px-6 py-4">Invoice Date</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Payment Date</th>
@@ -148,7 +147,7 @@ export function InvoicesPage() {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-[#0c0c0c]">
                 {sorted.map(({ inv, info }) => (
                   <tr key={inv.id} className={`forge-row border-b last:border-0 ${theme.rowBorder}`}>
                     <td className="type-body px-6 py-4 font-medium whitespace-nowrap">{inv.invoiceNumber}</td>

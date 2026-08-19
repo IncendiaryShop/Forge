@@ -6,6 +6,7 @@ import { useAuth } from "./context/AuthCtx";
 import { theme } from "./styles/theme";
 import { PAGE_TITLES } from "./utils/constants";
 import { getActiveBillingCycle } from "./utils/billCycle";
+import { fmt } from "./utils/helpers";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import { ConfigError } from "./components/ConfigError";
 import { AuthGate } from "./components/AuthGate";
@@ -27,6 +28,10 @@ import * as budgetsSvc from "./services/budgets";
 import * as billsSvc from "./services/bills";
 import * as invoicesSvc from "./services/invoices";
 import * as goalsSvc from "./services/goals";
+import * as emiPlansSvc from "./services/emiPlans";
+import * as emiInstallmentsSvc from "./services/emiInstallments";
+import * as creditCardStatementsSvc from "./services/creditCardStatements";
+import * as loanInstallmentsSvc from "./services/loanInstallments";
 
 /* --------------------------------- Shell --------------------------------- */
 
@@ -64,15 +69,19 @@ function AuthenticatedApp({ userId, onSignOut }) {
 
   const loadAll = useCallback(async () => {
     setDataStatus("loading");
-    const [accounts, transactions, budgets, bills, invoices, goals] = await Promise.all([
+    const [accounts, transactions, budgets, bills, invoices, goals, emiPlans, emiInstallments, creditCardStatements, loanInstallments] = await Promise.all([
       accountsSvc.listAccounts(),
       txnSvc.listTransactions(),
       budgetsSvc.listBudgets(),
       billsSvc.listBills(),
       invoicesSvc.listInvoices(),
       goalsSvc.listGoals(),
+      emiPlansSvc.listEmiPlans(),
+      emiInstallmentsSvc.listEmiInstallments(),
+      creditCardStatementsSvc.listCreditCardStatements(),
+      loanInstallmentsSvc.listLoanInstallments(),
     ]);
-    const failed = [accounts, transactions, budgets, bills, invoices, goals].find((r) => r.error);
+    const failed = [accounts, transactions, budgets, bills, invoices, goals, emiPlans, emiInstallments, creditCardStatements, loanInstallments].find((r) => r.error);
     if (failed) {
       setLoadError(failed.error.message);
       setDataStatus("error");
@@ -85,6 +94,10 @@ function AuthenticatedApp({ userId, onSignOut }) {
       bills: bills.data,
       invoices: invoices.data,
       goals: goals.data,
+      emiPlans: emiPlans.data,
+      emiInstallments: emiInstallments.data,
+      creditCardStatements: creditCardStatements.data,
+      loanInstallments: loanInstallments.data,
     });
     setDataStatus("ready");
   }, []);
@@ -113,6 +126,10 @@ function AuthenticatedApp({ userId, onSignOut }) {
       { name: "bills", refetch: billsSvc.listBills, key: "bills" },
       { name: "invoices", refetch: invoicesSvc.listInvoices, key: "invoices" },
       { name: "goals", refetch: goalsSvc.listGoals, key: "goals" },
+      { name: "emi_plans", refetch: emiPlansSvc.listEmiPlans, key: "emiPlans" },
+      { name: "emi_installments", refetch: emiInstallmentsSvc.listEmiInstallments, key: "emiInstallments" },
+      { name: "credit_card_statements", refetch: creditCardStatementsSvc.listCreditCardStatements, key: "creditCardStatements" },
+      { name: "loan_installments", refetch: loanInstallmentsSvc.listLoanInstallments, key: "loanInstallments" },
     ];
 
     const channels = tables.map(({ name, refetch, key }) =>
@@ -152,6 +169,117 @@ function AuthenticatedApp({ userId, onSignOut }) {
     return bal;
   };
 
+  // Credit Card outstanding — a liability, so its sign conventions are the
+  // mirror image of accountBalance() above: `opening` is the opening
+  // OUTSTANDING (amount already owed), Expenses increase it, Income/refunds
+  // decrease it, a transfer INTO the card (a payment) decreases it, and a
+  // transfer OUT of the card increases it. Non-Credit-Card accounts always
+  // resolve to 0 — normal bank/cash balance logic (accountBalance above)
+  // stays untouched by this.
+  const accountOutstanding = (accountId) => {
+    if (!data) return 0;
+    const acc = data.accounts.find((a) => a.id === accountId);
+    if (!acc || acc.type !== "Credit Card") return 0;
+    let outstanding = Number(acc.opening) || 0;
+    data.transactions.forEach((t) => {
+      if (t.type === "Expense" && t.account === accountId) outstanding += Number(t.amount);
+      else if (t.type === "Income" && t.account === accountId) outstanding -= Number(t.amount);
+      else if (t.type === "Transfer") {
+        if (t.transferAccount === accountId) outstanding -= Number(t.amount);
+        if (t.account === accountId) outstanding += Number(t.amount);
+      }
+    });
+    return outstanding;
+  };
+
+  // Bank/Cash available-funds check — the single source of truth for
+  // "does this account have enough to cover an Expense/Transfer debit",
+  // used everywhere a debiting transaction can be created or edited
+  // (TransactionForm, the Bills "Mark Paid" flow, and the EMI installment
+  // "Mark Paid" flow). Deliberately excludes Credit Card accounts, which
+  // keep using their own Credit Limit / Outstanding logic (accountOutstanding
+  // above + the credit-limit check in TransactionForm) instead of this rule.
+  //
+  // getAvailableBalance mirrors accountBalance()'s own per-transaction
+  // branches in reverse, applied to at most one excluded transaction — so
+  // editing a transaction is evaluated as "what would the balance be with
+  // the OLD transaction's effect undone first", never double-counting it
+  // against the NEW requested amount.
+  const getAvailableBalance = (accountId, excludeTxn) => {
+    let bal = accountBalance(accountId);
+    if (excludeTxn) {
+      if (excludeTxn.type === "Income" && excludeTxn.account === accountId) bal -= Number(excludeTxn.amount) || 0;
+      else if (excludeTxn.type === "Expense" && excludeTxn.account === accountId) bal += Number(excludeTxn.amount) || 0;
+      else if (excludeTxn.type === "Transfer") {
+        if (excludeTxn.account === accountId) bal += Number(excludeTxn.amount) || 0;
+        if (excludeTxn.transferAccount === accountId) bal -= Number(excludeTxn.amount) || 0;
+      }
+    }
+    return bal;
+  };
+
+  const insufficientFundsError = (accountId, amount, excludeTxn) => {
+    if (!data) return null;
+    const acc = data.accounts.find((a) => a.id === accountId);
+    if (!acc || acc.type === "Credit Card") return null; // Credit Cards use their own limit logic, not this rule
+    const available = getAvailableBalance(accountId, excludeTxn);
+    const requested = Number(amount) || 0;
+    if (requested > available) {
+      return `Insufficient balance in ${acc.name}. Available balance: ${fmt(available)}.`;
+    }
+    return null;
+  };
+
+  // Credit Card Payment check — a Transfer whose DESTINATION is a Credit
+  // Card is a payment against that card's outstanding, and a payment can
+  // never exceed what's actually owed. This is independent of (and in
+  // addition to) insufficientFundsError above, which already governs
+  // whether the SOURCE account can cover the debit — together they're the
+  // full validation for a Bank/Cash -> Credit Card transfer. Reuses
+  // accountOutstanding() (Phase 1) as its only source of outstanding, same
+  // "exclude the old transaction, then re-check" pattern as every other
+  // edit-aware validator here: only the OLD payment's effect on THIS card is
+  // undone (via `excludeTxn.transferAccount === accountId`), never anything
+  // else about the edited transaction.
+  const creditCardPaymentError = (destinationAccountId, amount, excludeTxn) => {
+    if (!data) return null;
+    const acc = data.accounts.find((a) => a.id === destinationAccountId);
+    if (!acc || acc.type !== "Credit Card") return null; // only applies when the destination is a Credit Card
+
+    let outstanding = accountOutstanding(destinationAccountId);
+    if (excludeTxn && excludeTxn.type === "Transfer" && excludeTxn.transferAccount === destinationAccountId) {
+      outstanding += Number(excludeTxn.amount) || 0;
+    }
+
+    const requested = Number(amount) || 0;
+    if (outstanding <= 0) {
+      return "No outstanding balance on this credit card.";
+    }
+    if (requested > outstanding) {
+      return `Payment exceeds credit card outstanding. Current outstanding: ${fmt(outstanding)}.`;
+    }
+    return null;
+  };
+
+  // Loan Outstanding Principal — a liability, derived the same way
+  // accountOutstanding() derives Credit Card outstanding: `opening` is the
+  // ORIGINAL PRINCIPAL, reduced by every principal-component Transfer
+  // recorded against this loan (pay_loan_installment always creates one such
+  // Transfer per paid installment — see supabase/schema.sql). Non-Loan
+  // accounts always resolve to 0. This is the ONLY place Outstanding
+  // Principal is computed — never stored, so it can never drift from the
+  // transaction history that backs it.
+  const loanOutstandingPrincipal = (accountId) => {
+    if (!data) return 0;
+    const acc = data.accounts.find((a) => a.id === accountId);
+    if (!acc || acc.type !== "Loan") return 0;
+    let outstanding = Number(acc.opening) || 0;
+    data.transactions.forEach((t) => {
+      if (t.type === "Transfer" && t.transferAccount === accountId) outstanding -= Number(t.amount);
+    });
+    return Math.max(outstanding, 0);
+  };
+
   // Every mutating context function funnels through here so failures always
   // surface the same way (a dismissible banner) instead of failing silently —
   // required by section 10 of the migration brief. Success is applied
@@ -177,15 +305,36 @@ function AuthenticatedApp({ userId, onSignOut }) {
     page,
     setPage,
     accountBalance,
+    accountOutstanding,
+    insufficientFundsError,
+    creditCardPaymentError,
+    loanOutstandingPrincipal,
     userId,
     signOut: onSignOut,
     reload: loadAll,
 
     addTransaction: async (t) => {
+      if (t.type === "Expense" || t.type === "Transfer") {
+        const fundsError = insufficientFundsError(t.account, t.amount);
+        if (fundsError) { setActionError(fundsError); return; }
+      }
+      if (t.type === "Transfer") {
+        const cardError = creditCardPaymentError(t.transferAccount, t.amount);
+        if (cardError) { setActionError(cardError); return; }
+      }
       const r = await withError(txnSvc.createTransaction(userId, t));
       if (r.data) setData((d) => d && ({ ...d, transactions: [...d.transactions, r.data] }));
     },
     updateTransaction: async (id, t) => {
+      const existingTxn = data?.transactions.find((x) => x.id === id);
+      if (t.type === "Expense" || t.type === "Transfer") {
+        const fundsError = insufficientFundsError(t.account, t.amount, existingTxn);
+        if (fundsError) { setActionError(fundsError); return; }
+      }
+      if (t.type === "Transfer") {
+        const cardError = creditCardPaymentError(t.transferAccount, t.amount, existingTxn);
+        if (cardError) { setActionError(cardError); return; }
+      }
       const r = await withError(txnSvc.updateTransaction(id, t));
       if (r.data) setData((d) => d && ({ ...d, transactions: d.transactions.map((x) => (x.id === id ? r.data : x)) }));
     },
@@ -305,6 +454,119 @@ function AuthenticatedApp({ userId, onSignOut }) {
     contributeGoal: async (id, amount) => {
       const r = await withError(goalsSvc.contributeGoal(id, amount));
       if (r.data) setData((d) => d && ({ ...d, goals: d.goals.map((x) => (x.id === id ? r.data : x)) }));
+    },
+
+    // Converts an existing Expense transaction (on a Credit Card account)
+    // into an EMI plan + generated installment schedule, via the atomic
+    // create_emi_plan() RPC. The original transaction itself is never
+    // touched here — see services/emiPlans.js — so the card's outstanding
+    // is unaffected by conversion, exactly as required.
+    convertToEmi: async (transactionId, payload) => {
+      const r = await withError(emiPlansSvc.createEmiPlan(userId, { transactionId, ...payload }));
+      if (r.data) setData((d) => d && ({
+        ...d,
+        emiPlans: [...d.emiPlans, r.data.plan],
+        emiInstallments: [...d.emiInstallments, ...r.data.installments],
+      }));
+    },
+    deleteEmiPlan: async (id) => {
+      const r = await withError(emiPlansSvc.deleteEmiPlan(id));
+      if (!r.error) setData((d) => d && ({
+        ...d,
+        emiPlans: d.emiPlans.filter((x) => x.id !== id),
+        emiInstallments: d.emiInstallments.filter((x) => x.emiPlanId !== id),
+      }));
+    },
+    // Settles every remaining installment on an Active EMI plan in one
+    // Transfer transaction and moves the plan to 'Preclosed'. See
+    // services/emiPlans.js precloseEmiPlan() / supabase/schema.sql
+    // preclose_emi_plan() for the full atomic/validated operation.
+    precloseEmiPlan: async (planId, sourceAccountId, date, description) => {
+      const r = await withError(emiPlansSvc.precloseEmiPlan(planId, sourceAccountId, date, description));
+      if (r.data) setData((d) => d && ({
+        ...d,
+        emiPlans: d.emiPlans.map((p) => (p.id === r.data.plan.id ? r.data.plan : p)),
+        emiInstallments: d.emiInstallments.map((x) => {
+          const updated = r.data.installments.find((i) => i.id === x.id);
+          return updated || x;
+        }),
+        transactions: [...d.transactions, r.data.transaction],
+      }));
+    },
+    payEmiInstallment: async (installment, sourceAccountId, date, description) => {
+      const r = await withError(emiInstallmentsSvc.payEmiInstallment(installment, sourceAccountId, date, description));
+      if (r.data) setData((d) => d && ({
+        ...d,
+        emiInstallments: d.emiInstallments.map((x) => (x.id === r.data.installment.id ? r.data.installment : x)),
+        emiPlans: r.data.plan ? d.emiPlans.map((p) => (p.id === r.data.plan.id ? r.data.plan : p)) : d.emiPlans,
+        transactions: [...d.transactions, r.data.transaction],
+      }));
+    },
+    unpayEmiInstallment: async (installment) => {
+      const r = await withError(emiInstallmentsSvc.unpayEmiInstallment(installment));
+      if (r.data) setData((d) => d && ({
+        ...d,
+        emiInstallments: d.emiInstallments.map((x) => (x.id === r.data.installment.id ? r.data.installment : x)),
+        emiPlans: r.data.plan ? d.emiPlans.map((p) => (p.id === r.data.plan.id ? r.data.plan : p)) : d.emiPlans,
+        transactions: installment.paymentTransactionId ? d.transactions.filter((t) => t.id !== installment.paymentTransactionId) : d.transactions,
+      }));
+    },
+
+    // Freezes the Credit Card's current Outstanding into a statement row for
+    // the given billing cycle (see utils/creditCardBilling.js for cycle
+    // computation). Never touches accounts/transactions — a billing record
+    // only, not a transaction.
+    generateStatement: async (accountId, cycleKey, statementDate, dueDate) => {
+      const r = await withError(creditCardStatementsSvc.generateStatement(accountId, cycleKey, statementDate, dueDate));
+      if (r.data) setData((d) => d && ({ ...d, creditCardStatements: [...d.creditCardStatements, r.data] }));
+    },
+
+    // Disburses a Loan account (one-time) — records the disbursement Transfer
+    // and generates the full amortization schedule atomically. See
+    // services/loanInstallments.js / supabase/schema.sql disburse_loan().
+    disburseLoan: async (accountId, destinationAccountId, date, installments, description) => {
+      const r = await withError(loanInstallmentsSvc.disburseLoan(accountId, destinationAccountId, date, installments, description));
+      if (r.data) setData((d) => d && ({
+        ...d,
+        transactions: [...d.transactions, r.data.transaction],
+        loanInstallments: [...d.loanInstallments, ...r.data.installments],
+        accounts: d.accounts.map((a) => (a.id === accountId ? { ...a, loanStatus: "Active" } : a)),
+      }));
+    },
+    // Pays one loan installment — splits the EMI into an interest Expense
+    // (if any) and a principal Transfer, atomically. See
+    // services/loanInstallments.js / supabase/schema.sql
+    // pay_loan_installment().
+    payLoanInstallment: async (installment, sourceAccountId, date, description) => {
+      const r = await withError(loanInstallmentsSvc.payLoanInstallment(installment, sourceAccountId, date, description));
+      if (r.data) setData((d) => d && ({
+        ...d,
+        loanInstallments: d.loanInstallments.map((x) => (x.id === r.data.installment.id ? r.data.installment : x)),
+        transactions: [
+          ...d.transactions,
+          r.data.principalTransaction,
+          ...(r.data.interestTransaction ? [r.data.interestTransaction] : []),
+        ],
+        accounts: r.data.loanStatus
+          ? d.accounts.map((a) => (a.id === installment.accountId ? { ...a, loanStatus: r.data.loanStatus } : a))
+          : d.accounts,
+      }));
+    },
+    // Pre-closes an Active loan — settles the entire remaining Outstanding
+    // Principal in one Transfer and marks every remaining installment
+    // Preclosed. See services/loanInstallments.js / supabase/schema.sql
+    // preclose_loan().
+    precloseLoan: async (accountId, sourceAccountId, date, description) => {
+      const r = await withError(loanInstallmentsSvc.precloseLoan(accountId, sourceAccountId, date, description));
+      if (r.data) setData((d) => d && ({
+        ...d,
+        loanInstallments: d.loanInstallments.map((x) => {
+          const updated = r.data.installments.find((i) => i.id === x.id);
+          return updated || x;
+        }),
+        transactions: [...d.transactions, r.data.transaction],
+        accounts: d.accounts.map((a) => (a.id === accountId ? { ...a, loanStatus: r.data.loanStatus } : a)),
+      }));
     },
   };
 

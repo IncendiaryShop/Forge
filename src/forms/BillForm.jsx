@@ -27,10 +27,6 @@ export function BillForm({ onDone, existing }) {
 
   const submit = (e) => {
     e.preventDefault();
-    if (!form.name.trim()) {
-      setError("Name is required.");
-      return;
-    }
     const amount = Number(form.amount);
     if (!(amount > 0)) {
       setError("Amount must be greater than 0.");
@@ -67,9 +63,6 @@ export function BillForm({ onDone, existing }) {
             </optgroup>
           </Select>
         </div>
-      </Field>
-      <Field label="Name">
-        <TextInput value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Netflix" required />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Category">

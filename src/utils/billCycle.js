@@ -2,7 +2,7 @@ function cycleKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function clampedDueDate(year, month, dueDay) {
+export function clampedDueDate(year, month, dueDay) {
   const lastDay = new Date(year, month + 1, 0).getDate();
   const actualDay = Math.min(Number(dueDay), lastDay);
   return new Date(year, month, actualDay);

@@ -9,6 +9,21 @@ const fromRow = (r) => ({
   type: r.type,
   provider: r.provider || "",
   opening: Number(r.opening),
+  // Absent for non-Credit Card accounts, and for any pre-existing Credit
+  // Card account created before this field existed — null rather than 0 so
+  // "no limit set yet" stays distinguishable from "limit is zero".
+  creditLimit: r.credit_limit != null ? Number(r.credit_limit) : null,
+  // Credit Card billing cycle (Phase 7) — day-of-month settings, nullable
+  // for the same reason as creditLimit above.
+  statementDate: r.statement_date != null ? Number(r.statement_date) : null,
+  paymentDueDate: r.payment_due_date != null ? Number(r.payment_due_date) : null,
+  // Loan accounts only (Phase 9) — `opening` above doubles as the Original
+  // Principal. Nullable for every non-Loan account.
+  loanInterestRate: r.loan_interest_rate != null ? Number(r.loan_interest_rate) : null,
+  loanTenureMonths: r.loan_tenure_months != null ? Number(r.loan_tenure_months) : null,
+  loanEmiAmount: r.loan_emi_amount != null ? Number(r.loan_emi_amount) : null,
+  loanStartDate: r.loan_start_date || null,
+  loanStatus: r.loan_status || null,
 });
 
 const toRow = (a) => ({
@@ -16,6 +31,14 @@ const toRow = (a) => ({
   type: a.type,
   provider: a.provider || null,
   opening: Number(a.opening) || 0,
+  credit_limit: a.type === "Credit Card" && a.creditLimit != null && a.creditLimit !== "" ? Number(a.creditLimit) : null,
+  statement_date: a.type === "Credit Card" && a.statementDate != null && a.statementDate !== "" ? Number(a.statementDate) : null,
+  payment_due_date: a.type === "Credit Card" && a.paymentDueDate != null && a.paymentDueDate !== "" ? Number(a.paymentDueDate) : null,
+  loan_interest_rate: a.type === "Loan" && a.loanInterestRate != null && a.loanInterestRate !== "" ? Number(a.loanInterestRate) : null,
+  loan_tenure_months: a.type === "Loan" && a.loanTenureMonths != null && a.loanTenureMonths !== "" ? Number(a.loanTenureMonths) : null,
+  loan_emi_amount: a.type === "Loan" && a.loanEmiAmount != null && a.loanEmiAmount !== "" ? Number(a.loanEmiAmount) : null,
+  loan_start_date: a.type === "Loan" && a.loanStartDate ? a.loanStartDate : null,
+  loan_status: a.type === "Loan" ? (a.loanStatus || "Active") : null,
 });
 
 export async function listAccounts() {

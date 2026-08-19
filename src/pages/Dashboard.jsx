@@ -207,10 +207,9 @@ export function Dashboard() {
     .filter((t) => t.type === "Expense")
     .reduce((s, t) => s + Number(t.amount), 0);
 
-  const totalBalance = accounts.reduce(
-    (s, a) => s + accountBalance(a.id),
-    0
-  );
+  const totalBalance = accounts
+    .filter((a) => a.type !== "Loan")
+    .reduce((s, a) => s + accountBalance(a.id), 0);
 
   const budgetTotal = Object.values(budgets).reduce(
     (s, v) => s + Number(v),
@@ -246,6 +245,7 @@ export function Dashboard() {
   }, [monthTxns]);
 
   const [periodType, setPeriodType] = useState("monthly");
+  const [upcomingTab, setUpcomingTab] = useState("payments"); // "payments" | "emi"
 
   const [monthSel, setMonthSel] = useState({
     month: new Date().getMonth(),
@@ -484,6 +484,30 @@ export function Dashboard() {
         ? b.daysOut - 1000
         : b.daysOut;
 
+      return rankA - rankB;
+    })
+    .slice(0, 3);
+
+  // Purely additive/display-only — reuses the same "due soon" window and
+  // badge/label helpers as upcomingPayments above, but never feeds into any
+  // KPI/chart total, so it can't double-count anything already computed
+  // elsewhere on this page.
+  const upcomingEmiInstallments = (data.emiInstallments || [])
+    .filter((inst) => inst.status !== "Paid")
+    .map((inst) => {
+      const due = new Date(inst.dueDate);
+      due.setHours(0, 0, 0, 0);
+      const daysOut = Math.round((due - today) / (1000 * 60 * 60 * 24));
+      return { ...inst, daysOut, overdue: daysOut < 0 };
+    })
+    .filter(
+      (inst) =>
+        inst.overdue ||
+        (inst.daysOut >= 0 && inst.daysOut <= 5)
+    )
+    .sort((a, b) => {
+      const rankA = a.overdue ? a.daysOut - 1000 : a.daysOut;
+      const rankB = b.overdue ? b.daysOut - 1000 : b.daysOut;
       return rankA - rankB;
     })
     .slice(0, 3);
@@ -1178,15 +1202,19 @@ export function Dashboard() {
                   </div>
 
                   <p
-                    className={`text-[17px] font-bold tracking-[-0.01em] shrink-0 ${
+                    className={`text-[17px] font-medium tracking-[-0.01em] shrink-0 ${
                       t.type === "Income"
                         ? "text-emerald-500"
-                        : ""
+                        : t.type === "Transfer"
+                          ? "text-white/55"
+                          : "text-danger"
                     }`}
                   >
                     {t.type === "Income"
                       ? "+"
-                      : "-"}
+                      : t.type === "Expense"
+                        ? "-"
+                        : ""}
                     {fmt(t.amount)}
                   </p>
 
@@ -1206,50 +1234,205 @@ export function Dashboard() {
 
         <Card className="p-5">
 
-          <h3 className="type-section-title mb-4">
-            Upcoming Payments
-          </h3>
+          <div className="flex items-center justify-between mb-4 gap-3">
 
-          {upcomingPayments.length === 0 ? (
+            <h3 className="type-section-title">
+              Upcoming
+            </h3>
 
-            <>
+            <div className="flex items-center gap-1 rounded-full bg-white/[0.04] p-1 shrink-0">
+
+              <button
+                onClick={() => setUpcomingTab("payments")}
+                className={`text-[13px] font-semibold leading-none px-3 py-1.5 rounded-full transition-all duration-200 ${
+                  upcomingTab === "payments"
+                    ? "bg-accent text-white"
+                    : `${theme.subtext} hover:text-white`
+                }`}
+              >
+                Bills
+              </button>
+
+              <button
+                onClick={() => setUpcomingTab("emi")}
+                className={`text-[13px] font-semibold leading-none px-3 py-1.5 rounded-full transition-all duration-200 ${
+                  upcomingTab === "emi"
+                    ? "bg-accent text-white"
+                    : `${theme.subtext} hover:text-white`
+                }`}
+              >
+                EMI
+              </button>
+
+            </div>
+
+          </div>
+
+          {upcomingTab === "payments" && (
+
+            upcomingPayments.length === 0 ? (
+
+              <>
+                <EmptyState
+                  icon={(p) => (
+                    <AppIcon
+                      name="dashboard.upcoming"
+                      {...p}
+                    />
+                  )}
+                  title="No upcoming payments"
+                  subtitle="Nothing due in the next 5 days."
+                />
+
+                <button
+                  onClick={() =>
+                    setPage("bills")
+                  }
+                  className="forge-link type-button w-full text-center rounded-xl h-[42px] flex items-center justify-center border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200 mt-4"
+                >
+                  Manage Bills
+                </button>
+              </>
+
+            ) : (
+
+              <>
+
+                <div className="space-y-1.5">
+
+                  {upcomingPayments.map((p) => {
+
+                    const badge = badgeFor(p);
+
+                    return (
+
+                      <div
+                        key={p.id}
+                        onClick={() =>
+                          setPage("bills")
+                        }
+                        className="group cursor-pointer rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.05] hover:border-white/10 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)]"
+                      >
+
+                        <div className="flex items-center justify-between mb-1.5">
+
+                          <div className="flex items-center gap-3 min-w-0">
+
+                            {p.provider ? (
+
+                              <ServiceLogo
+                                provider={p.provider}
+                                size="widget"
+                              />
+
+                            ) : (
+
+                              <AppIcon
+                                name={getBillIcon(p)}
+                                size="md"
+                                container
+                              />
+
+                            )}
+
+                            <div className="min-w-0">
+
+                              <p className="text-[15px] font-bold truncate">
+                                {p.name}
+                              </p>
+
+                            </div>
+
+                          </div>
+
+                          <span
+                            className={`text-[11px] font-bold leading-none px-2.5 py-1 rounded-full shrink-0 ${badge.cls}`}
+                          >
+                            {badge.label}
+                          </span>
+
+                        </div>
+
+                        <div className="flex items-center justify-between pl-[46px]">
+
+                          <p className={`type-small-label ${theme.subtext}`}>
+                            {statusLabel(p)}
+                          </p>
+
+                          <p className="text-[16px] font-bold tracking-[-0.01em]">
+                            {fmt(p.amount)}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                    );
+
+                  })}
+
+                </div>
+
+                <div
+                  className={`border-t mt-3 pt-3 ${theme.rowBorder}`}
+                >
+
+                  <button
+                    onClick={() =>
+                      setPage("bills")
+                    }
+                    className="forge-link type-button w-full text-center rounded-xl h-[42px] flex items-center justify-center border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
+                  >
+                    View All
+                  </button>
+
+                </div>
+
+              </>
+
+            )
+
+          )}
+
+          {upcomingTab === "emi" && (
+
+            upcomingEmiInstallments.length === 0 ? (
+
               <EmptyState
                 icon={(p) => (
                   <AppIcon
-                    name="dashboard.upcoming"
+                    name="ui.emi"
                     {...p}
                   />
                 )}
-                title="No upcoming payments"
+                title="No EMI payments due soon"
                 subtitle="Nothing due in the next 5 days."
               />
 
-              <button
-                onClick={() =>
-                  setPage("bills")
-                }
-                className="forge-link type-button w-full text-center rounded-xl h-[42px] flex items-center justify-center border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200 mt-4"
-              >
-                Manage Bills
-              </button>
-            </>
-
-          ) : (
-
-            <>
+            ) : (
 
               <div className="space-y-1.5">
 
-                {upcomingPayments.map((p) => {
+                {upcomingEmiInstallments.map((inst) => {
 
-                  const badge = badgeFor(p);
+                  const plan = data.emiPlans.find(
+                    (p) => p.id === inst.emiPlanId
+                  );
+
+                  const txn = plan
+                    ? data.transactions.find(
+                        (t) => t.id === plan.transactionId
+                      )
+                    : null;
+
+                  const badge = badgeFor(inst);
 
                   return (
 
                     <div
-                      key={p.id}
+                      key={inst.id}
                       onClick={() =>
-                        setPage("bills")
+                        setPage("transactions")
                       }
                       className="group cursor-pointer rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.05] hover:border-white/10 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)]"
                     >
@@ -1258,27 +1441,18 @@ export function Dashboard() {
 
                         <div className="flex items-center gap-3 min-w-0">
 
-                          {p.provider ? (
-
-                            <ServiceLogo
-                              provider={p.provider}
-                              size="widget"
-                            />
-
-                          ) : (
-
-                            <AppIcon
-                              name={getBillIcon(p)}
-                              size="md"
-                              container
-                            />
-
-                          )}
+                          <AppIcon
+                            name="ui.emi"
+                            size="md"
+                            container
+                          />
 
                           <div className="min-w-0">
 
                             <p className="text-[15px] font-bold truncate">
-                              {p.name}
+                              {txn?.description ||
+                                txn?.category ||
+                                "EMI Payment"}
                             </p>
 
                           </div>
@@ -1296,11 +1470,11 @@ export function Dashboard() {
                       <div className="flex items-center justify-between pl-[46px]">
 
                         <p className={`type-small-label ${theme.subtext}`}>
-                          {statusLabel(p)}
+                          Installment {inst.installmentNumber} of {plan?.tenureMonths || "—"}
                         </p>
 
                         <p className="text-[16px] font-bold tracking-[-0.01em]">
-                          {fmt(p.amount)}
+                          {fmt(inst.amount)}
                         </p>
 
                       </div>
@@ -1313,22 +1487,7 @@ export function Dashboard() {
 
               </div>
 
-              <div
-                className={`border-t mt-3 pt-3 ${theme.rowBorder}`}
-              >
-
-                <button
-                  onClick={() =>
-                    setPage("bills")
-                  }
-                  className="forge-link type-button w-full text-center rounded-xl h-[42px] flex items-center justify-center border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
-                >
-                  View All
-                </button>
-
-              </div>
-
-            </>
+            )
 
           )}
 

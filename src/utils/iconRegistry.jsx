@@ -195,6 +195,7 @@ export const ICONS = {
     "fixed-deposit": PiggyBank,
     investment: ChartNoAxesCombined,
     wallet: WalletCards,
+    loan: Landmark,
     other: WalletCards,
     _fallback: WalletCards,
   },
@@ -269,6 +270,7 @@ export const ICONS = {
     trendUp: TrendingUp,
     trendDown: TrendingDown,
     checkCircle: CircleCheck,
+    emi: BadgePercent,
     _fallback: InfoCircle,
   },
 };

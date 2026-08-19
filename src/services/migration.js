@@ -79,6 +79,7 @@ export async function migrateLocalDataToCloud(userId, local) {
   if (local.accounts.length) {
     const rows = local.accounts.map((a) => ({
       user_id: userId, name: a.name, type: a.type, provider: a.provider || null, opening: Number(a.opening) || 0,
+      credit_limit: a.type === "Credit Card" && a.creditLimit != null && a.creditLimit !== "" ? Number(a.creditLimit) : null,
     }));
     const { data, error } = await call(supabase.from("accounts").insert(rows).select(), "Migration failed while creating accounts.");
     if (error) return { success: false, error };

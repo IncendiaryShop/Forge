@@ -2,7 +2,7 @@
 
 export const INCOME_CATEGORIES = ["Salary", "Freelance", "Bonus", "Interest", "Cashback", "Refund", "Gift", "Dividend", "Rental", "Other"];
 export const EXPENSE_CATEGORIES = ["Food", "Groceries", "Transportation", "Fuel", "Rent", "Utilities", "Medical", "Insurance", "Shopping", "Travel", "Entertainment", "Education", "Subscriptions", "Family", "EMI", "Miscellaneous"];
-export const ACCOUNT_TYPES = ["Bank", "Cash", "Wallet", "Credit Card", "Fixed Deposit", "Investment"];
+export const ACCOUNT_TYPES = ["Bank", "Cash", "Wallet", "Credit Card", "Fixed Deposit", "Investment", "Loan"];
 export const CHART_COLORS = [
   "#60269d",
 "#7344b1",

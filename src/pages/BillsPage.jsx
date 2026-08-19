@@ -12,28 +12,74 @@ import {
   ServiceLogo,
   AppIcon,
   AccountLogo,
+  Badge,
+  EmiSchedule,
 } from "../components";
 import { BillForm } from "../forms/BillForm";
 import { fmt } from "../utils/helpers";
 import { computeBillStatus } from "../utils/billCycle";
 import { resolveBillDisplay } from "../utils/billRegistry";
 
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function formatDueDate(dateStr) {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  if (!y || !m || !d) return dateStr;
+  return `${d} ${MONTH_ABBR[m - 1]} ${y}`;
+}
+
 export function BillsPage() {
-  const { data, theme, deleteBill, toggleBillPaid } = useApp();
+  const { data, theme, deleteBill, toggleBillPaid, insufficientFundsError } = useApp();
 
   const [modal, setModal] = useState(null);
   const [payModal, setPayModal] = useState(null);
   const [payAccount, setPayAccount] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [undoTarget, setUndoTarget] = useState(null);
+  const [emiScheduleForId, setEmiScheduleForId] = useState(null); // emi plan id | null
+  const [payError, setPayError] = useState("");
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const sorted = [...data.bills].sort((a, b) => a.dueDay - b.dueDay);
 
+  // EMI Payments — reads from the same emi_plans/emi_installments data the
+  // Transactions page's EMI Schedule modal already uses (see App.jsx);
+  // nothing here creates, converts, or duplicates any EMI or transaction
+  // record. Only 'Active' plans qualify — Completed/Cancelled/Preclosed
+  // plans have nothing left to pay and are intentionally excluded here.
+  const activeEmiRows = (data.emiPlans || [])
+    .filter((plan) => plan.status === "Active")
+    .map((plan) => {
+      const installments = (data.emiInstallments || []).filter((i) => i.emiPlanId === plan.id);
+      const paidCount = installments.filter((i) => i.status === "Paid").length;
+      const nextUnpaid = installments
+        .filter((i) => i.status !== "Paid")
+        .sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0] || null;
+
+      return {
+        plan,
+        txn: data.transactions.find((t) => t.id === plan.transactionId) || null,
+        account: data.accounts.find((a) => a.id === plan.accountId) || null,
+        paidCount,
+        totalCount: installments.length || plan.tenureMonths,
+        nextDueDate: nextUnpaid?.dueDate || null,
+      };
+    })
+    .sort((a, b) => {
+      if (!a.nextDueDate && !b.nextDueDate) return 0;
+      if (!a.nextDueDate) return 1;
+      if (!b.nextDueDate) return -1;
+      return a.nextDueDate.localeCompare(b.nextDueDate);
+    });
+
+  const emiScheduleForPlan = data.emiPlans.find((p) => p.id === emiScheduleForId) || null;
+
   const openPayModal = (bill) => {
     setPayAccount(bill.account || data.accounts[0]?.id || "");
+    setPayError("");
     setPayModal(bill);
   };
 
@@ -41,6 +87,12 @@ export function BillsPage() {
     e.preventDefault();
 
     if (!payAccount) return;
+
+    const fundsError = insufficientFundsError(payAccount, payModal.amount);
+    if (fundsError) {
+      setPayError(fundsError);
+      return;
+    }
 
     toggleBillPaid(payModal.id, payAccount);
     setPayModal(null);
@@ -92,14 +144,14 @@ export function BillsPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Current-cycle payment status */}
                   <div
-                    className={`forge-button w-6 h-6 rounded-full border flex items-center justify-center shrink-0 ${
+                    className={`forge-button w-6 h-6 rounded-full flex items-center justify-center shrink-0   ${
                       b.paid
-                        ? "bg-emerald-500 border-emerald-500"
+                        ? ""
                         : theme.border
                     }`}
                     title={b.paid ? "Paid" : "Unpaid"}
                   >
-                    {b.paid && <AppIcon name="bills.paid" size={14} />}
+                    {b.paid && <AppIcon name="bills.paid" size={15} />}
                   </div>
 
                   {/* Brand logo OR semantic bill icon */}
@@ -168,6 +220,55 @@ export function BillsPage() {
         )}
       </Card>
 
+      {/* ================= EMI Payments ================= */}
+      <div className="space-y-4">
+        <h2 className="type-section-title">EMI Payments</h2>
+
+        <Card>
+          {activeEmiRows.length === 0 ? (
+            <EmptyState
+              icon={(p) => <AppIcon name="ui.emi" {...p} />}
+              title="No active EMI plans"
+              subtitle="Convert a Credit Card expense to EMI from the Transactions page."
+            />
+          ) : (
+            activeEmiRows.map(({ plan, txn, account, paidCount, totalCount, nextDueDate }) => (
+              <div
+                key={plan.id}
+                className={`flex items-center justify-between px-6 py-5 border-b last:border-0 ${theme.rowBorder}`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <AppIcon name="ui.emi" size="md" container />
+
+                  <div className="min-w-0">
+                    <p className="type-body font-medium truncate">
+                      {txn?.description || txn?.category || "EMI"}
+                    </p>
+
+                    <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
+                      {account?.name || "—"} · {fmt(plan.emiAmount)}/month
+                    </p>
+
+                    <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
+                      {paidCount} of {totalCount} installments paid
+                      {nextDueDate && ` · Next due: ${formatDueDate(nextDueDate)}`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  <Badge className="!bg-accent/12 !text-accent !border-0">{plan.status}</Badge>
+
+                  <GhostButton onClick={() => setEmiScheduleForId(plan.id)}>
+                    View Schedule
+                  </GhostButton>
+                </div>
+              </div>
+            ))
+          )}
+        </Card>
+      </div>
+
       {/* Add / Edit Bill */}
       {modal && (
         <Modal
@@ -214,6 +315,8 @@ export function BillsPage() {
                 </div>
               </div>
             </Field>
+
+            {payError && <p className="type-secondary text-red-500">{payError}</p>}
 
             <div className="flex gap-3">
               <GhostButton
@@ -308,6 +411,20 @@ export function BillsPage() {
               </PrimaryButton>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* ================= EMI Schedule Modal ================= */}
+      {emiScheduleForPlan && (
+        <Modal
+          title="EMI Schedule"
+          onClose={() => setEmiScheduleForId(null)}
+          wide
+        >
+          <EmiSchedule
+            plan={emiScheduleForPlan}
+            onDone={() => setEmiScheduleForId(null)}
+          />
         </Modal>
       )}
     </div>

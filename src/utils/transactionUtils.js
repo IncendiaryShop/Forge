@@ -4,7 +4,14 @@ export function sortTransactionsDesc(transactions) {
     if (dateCmp !== 0) return dateCmp;
     const aTie = a.createdAt || a.date;
     const bTie = b.createdAt || b.date;
-    return String(bTie).localeCompare(String(aTie));
+    const createdCmp = String(bTie).localeCompare(String(aTie));
+    if (createdCmp !== 0) return createdCmp;
+    // Final stable tie-breaker — date and created_at can both be identical
+    // (e.g. rows from the same bulk insert/migration batch), so without
+    // this the JS engine's own (technically stable, but fetch-order-
+    // dependent) sort would decide, which isn't deterministic once realtime
+    // refetches can hand back rows in a different order.
+    return String(b.id).localeCompare(String(a.id));
   });
 }
 

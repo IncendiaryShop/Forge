@@ -9,9 +9,11 @@ import {
   Modal,
   EmptyState,
   AppIcon,
+  EmiSchedule,
 } from "../components";
 
 import { TransactionForm } from "../forms/TransactionForm";
+import { EmiConvertForm } from "../forms/EmiConvertForm";
 import { hashColorClasses, fmt } from "../utils/helpers";
 import { sortTransactionsDesc } from "../utils/transactionUtils";
 
@@ -23,11 +25,31 @@ export function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState("All");
   const [catFilter, setCatFilter] = useState("All");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [emiModal, setEmiModal] = useState(null); // transaction being converted | null
+  const [emiScheduleForId, setEmiScheduleForId] = useState(null); // emi plan id | null
+  const emiScheduleForPlan = data.emiPlans.find((p) => p.id === emiScheduleForId) || null;
 
   const accountName = useCallback(
     (id) => data.accounts.find((a) => a.id === id)?.name || "—",
     [data.accounts]
   );
+
+  const creditCardAccountIds = useMemo(
+    () => new Set(data.accounts.filter((a) => a.type === "Credit Card").map((a) => a.id)),
+    [data.accounts]
+  );
+
+  const emiPlanByTxnId = useMemo(() => {
+    const map = new Map();
+    data.emiPlans.forEach((p) => map.set(p.transactionId, p));
+    return map;
+  }, [data.emiPlans]);
+
+  const isEmiEligible = (t) =>
+    t.type === "Expense" && creditCardAccountIds.has(t.account) && !emiPlanByTxnId.has(t.id);
+
+  const remainingInstallments = (planId) =>
+    data.emiInstallments.filter((i) => i.emiPlanId === planId && i.status !== "Paid").length;
 
   const txnIconName = (t) => {
     if (t.type === "Income") return "transactionTypes.income";
@@ -282,6 +304,14 @@ export function TransactionsPage() {
                           {t.description || "—"}
                         </span>
 
+                        {emiPlanByTxnId.has(t.id) && (
+                          <span title={`${remainingInstallments(emiPlanByTxnId.get(t.id).id)} of ${emiPlanByTxnId.get(t.id).tenureMonths} installments remaining`}>
+                            <Badge className="!bg-accent/12 !text-accent !border-0 rounded-full px-2.5 py-0.5 text-[11px] font-normal leading-5 shrink-0">
+                              EMI
+                            </Badge>
+                          </span>
+                        )}
+
                       </div>
                     </td>
 
@@ -319,6 +349,13 @@ export function TransactionsPage() {
                             t.transferAccount
                           )}`
                         : ""}
+
+                      {t.type === "Transfer" &&
+                        creditCardAccountIds.has(t.transferAccount) && (
+                          <span className="block type-small-label text-accent mt-0.5">
+                            Credit Card Payment
+                          </span>
+                        )}
                     </td>
 
                     {/* Amount */}
@@ -335,7 +372,7 @@ export function TransactionsPage() {
                             ? "text-emerald-500"
                             : t.type === "Transfer"
                               ? "text-white/55"
-                              : ""
+                              : "text-danger"
                         }
                       `}
                     >
@@ -357,6 +394,22 @@ export function TransactionsPage() {
                         justify-end
                         gap-1
                       ">
+
+                        {isEmiEligible(t) && (
+                          <IconBtn
+                            icon="ui.emi"
+                            onClick={() => setEmiModal(t)}
+                            title="Convert to EMI"
+                          />
+                        )}
+
+                        {emiPlanByTxnId.has(t.id) && (
+                          <IconBtn
+                            icon="ui.emi"
+                            onClick={() => setEmiScheduleForId(emiPlanByTxnId.get(t.id).id)}
+                            title="View EMI Schedule"
+                          />
+                        )}
 
                         <IconBtn
                           icon="ui.edit"
@@ -446,6 +499,33 @@ export function TransactionsPage() {
             </PrimaryButton>
 
           </div>
+        </Modal>
+      )}
+
+      {/* ================= Convert to EMI Modal ================= */}
+      {emiModal && (
+        <Modal
+          title={`Convert "${emiModal.description || emiModal.category}" to EMI`}
+          onClose={() => setEmiModal(null)}
+        >
+          <EmiConvertForm
+            transaction={emiModal}
+            onDone={() => setEmiModal(null)}
+          />
+        </Modal>
+      )}
+
+      {/* ================= EMI Schedule Modal ================= */}
+      {emiScheduleForPlan && (
+        <Modal
+          title="EMI Schedule"
+          onClose={() => setEmiScheduleForId(null)}
+          wide
+        >
+          <EmiSchedule
+            plan={emiScheduleForPlan}
+            onDone={() => setEmiScheduleForId(null)}
+          />
         </Modal>
       )}
     </div>

@@ -22,10 +22,7 @@ A modern personal finance management application that helps you manage your mone
 - **Vite**
 - **Tailwind CSS**
 - **Supabase**
-  - Authentication
-  - PostgreSQL Database
-  - Realtime
-- ** Font Awesome** for icons
+- **Font Awesome** for icons
 
 ## 📸 What Forge Brings Together
 
@@ -35,7 +32,7 @@ The goal is simple: **a clearer and more organized view of your personal finance
 
 ## 👨‍💻 Creator
 
-**Arpit**
+**Incendiary | Arpit Kumar**
 
 ---
 

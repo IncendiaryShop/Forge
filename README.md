@@ -1,87 +1,85 @@
 # Forge
 
-> A modern personal finance management application built to help users track accounts, transactions, budgets, bills, credit cards, EMIs, loans, invoices, and financial goals in one place.
+A modern personal finance management application that helps you manage your money, accounts, payments, credit cards, EMIs, loans, budgets, and more — all in one place.
 
-![Forge Dashboard](./public/dashboard-preview.png)
+## ✨ Features
 
-## Overview
+- 📊 **Dashboard** — Get a clear overview of your finances, income, expenses, balances, and recent activity.
+- 💳 **Accounts** — Manage Bank, Cash, Credit Card, Loan, Investment, and Fixed Deposit accounts.
+- 💸 **Transactions & Transfers** — Track income, expenses, and transfers between accounts.
+- 💳 **Credit Cards** — Monitor credit limits, outstanding balances, payments, billing cycles, and statements.
+- 📅 **EMIs** — Convert eligible expenses into EMIs, track installments, and pre-close plans when needed.
+- 🏦 **Loans** — Track loan disbursement, repayment schedules, installments, and pre-closure.
+- 🧾 **Bills & Recurring Payments** — Keep track of upcoming and recurring payments.
+- 📄 **Invoices** — Manage invoices and payment status.
+- 🎯 **Budgets & Categories** — Monitor spending and stay on top of your monthly budget.
+- 🔔 **Upcoming Payments** — View upcoming bills and EMI payments from the dashboard.
 
-**Forge** is a full-featured personal finance management platform designed around accurate financial tracking and clear separation between different types of accounts and financial operations.
+## 🛠️ Built With
 
-The application supports everything from everyday income and expenses to more complex financial workflows such as:
+- **React**
+- **JavaScript**
+- **Vite**
+- **Tailwind CSS**
+- **Supabase**
+  - Authentication
+  - PostgreSQL Database
+  - Realtime
+- **Lucide / Font Awesome** for icons
 
-- Credit card limits and outstanding balances
-- Credit card EMI conversion and pre-closure
-- Credit card statements and billing cycles
-- Loan accounts, disbursement, repayment schedules, and pre-closure
-- Recurring bills and upcoming payments
-- Budget and category-based spending analysis
-- Invoice tracking
-- Savings goals
-- Secure user-level data isolation
+## 🚀 Getting Started
 
-Forge is built with a focus on **correct accounting behavior, data consistency, validation, and financial integrity**.
+### Clone the repository
 
----
+```bash
+git clone https://github.com/YOUR_USERNAME/forge.git
+cd forge
+```
 
-# ✨ Features
+### Install dependencies
 
-## 📊 Dashboard
+```bash
+npm install
+```
 
-A centralized financial overview providing:
+### Configure Supabase
 
-- Total balance across eligible accounts
-- Monthly income
-- Monthly expenses
-- Cash flow visualization
-- Spending breakdown by category
-- Budget usage and remaining budget
-- Recent transactions
-- Invoice summary
-- Upcoming payments and EMI payments in a combined widget
-- Quick navigation to relevant sections
+Create a `.env` file:
 
-### Upcoming Widget
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-Upcoming Bills and EMI Payments are presented inside a single widget with tab-based navigation.
-
-- **Payments** tab
-- **EMI Payments** tab
-
-This keeps related upcoming financial obligations in one place without duplicating underlying logic.
-
----
-
-# 💳 Account Management
-
-Forge supports multiple account types:
-
-- 🏦 Bank
-- 💵 Cash
-- 💳 Credit Card
-- 🏠 Loan
-- 📈 Investment
-- 🏦 Fixed Deposit
-
-Each account type follows its own financial behavior and validation rules.
-
----
-
-## Bank & Cash Accounts
-
-Supports:
-
-- Opening balance
-- Income tracking
-- Expense tracking
-- Transfers
-- Insufficient funds protection
-
-Balance calculation:
+Set up the database using the SQL files available in:
 
 ```text
-Opening Balance
-+ Income
-- Expenses
-- Outgoing Transfers
-+ Incoming Transfers
+supabase/schema.sql
+supabase/migrations/
+```
+
+### Run locally
+
+```bash
+npm run dev
+```
+
+### Production build
+
+```bash
+npm run build
+```
+
+## 📸 What Forge Brings Together
+
+Forge brings everyday personal finance activities into one application — from tracking daily expenses and managing budgets to handling Credit Card payments, EMIs, Loans, Bills, and Invoices.
+
+The goal is simple: **a clearer and more organized view of your personal finances.**
+
+## 👨‍💻 Creator
+
+**Arpit**
+
+---
+
+Built as a personal finance management project.

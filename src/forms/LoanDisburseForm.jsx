@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../context/AppContext";
-import { Field, Select, TextInput, PrimaryButton, GhostButton } from "../components";
+import { Field, Select, TextInput, PrimaryButton, GhostButton, DatePicker } from "../components";
 import { fmt, todayISO } from "../utils/helpers";
 import { generateLoanSchedule } from "../utils/loanAmortization";
 
@@ -50,7 +50,7 @@ export function LoanDisburseForm({ account, onDone }) {
       </Field>
 
       <Field label="Disbursement Date">
-        <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+        <DatePicker value={date} onChange={(e) => setDate(e.target.value)} required />
       </Field>
 
       {schedule.length > 0 && (

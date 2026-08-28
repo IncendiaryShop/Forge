@@ -118,15 +118,15 @@ export function BudgetPage() {
 </div>
 
       {/* Total Budget */}
-      <Card className="p-6 w-full">
-        <div className="flex items-center justify-between gap-6">
+      <Card className="p-5 sm:p-6 w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
           <div className="min-w-0">
             <p className={`type-card-label ${theme.subtext}`}>
               Total Monthly Budget
             </p>
 
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-3xl font-bold tracking-tight">
+            <div className="flex items-baseline gap-2 mt-1 flex-wrap">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight">
                 {fmt(totalSpent)}
               </span>
 
@@ -179,7 +179,7 @@ export function BudgetPage() {
           />
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 sm:gap-4 w-full">
           {rows.map((r) => {
             const over = r.spent > r.amount;
             const style =
@@ -233,7 +233,7 @@ export function BudgetPage() {
                       {Math.round(r.pct)}%
                     </span>
 
-                    <div className="forge-card-actions flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="forge-card-actions flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                       <IconBtn
                         icon="ui.edit"
                         title="Edit"

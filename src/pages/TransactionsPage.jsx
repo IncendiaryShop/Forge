@@ -136,14 +136,14 @@ export function TransactionsPage() {
   `;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
 
       {/* ================= Filters / Actions ================= */}
-      <div className="flex flex-wrap items-center gap-3 justify-between">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center flex-1">
 
           {/* Search */}
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <AppIcon
               name="ui.search"
               size={14}
@@ -163,56 +163,137 @@ export function TransactionsPage() {
                 border
                 text-base
                 outline-none
-                w-56
+                w-full
+                sm:w-56
                 ${theme.input}
               `}
             />
           </div>
 
-          {/* Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className={filterSelectCls}
-          >
-            <option value="All">All</option>
-            <option value="Income">Income</option>
-            <option value="Expense">Expense</option>
-            <option value="Transfer">Transfer</option>
-          </select>
+          <div className="flex items-center gap-2.5">
+            {/* Type Filter */}
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className={`${filterSelectCls} flex-1 sm:flex-none`}
+            >
+              <option value="All">All</option>
+              <option value="Income">Income</option>
+              <option value="Expense">Expense</option>
+              <option value="Transfer">Transfer</option>
+            </select>
 
-          {/* Category Filter */}
-          <select
-            value={catFilter}
-            onChange={(e) => setCatFilter(e.target.value)}
-            className={filterSelectCls}
-          >
-            <option value="All">All</option>
+            {/* Category Filter */}
+            <select
+              value={catFilter}
+              onChange={(e) => setCatFilter(e.target.value)}
+              className={`${filterSelectCls} flex-1 sm:flex-none`}
+            >
+              <option value="All">All</option>
 
-            {allCats.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+              {allCats.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2.5">
-          <GhostButton onClick={exportCsv}>
-            <AppIcon name="ui.download" size={14} />
-            Export CSV
-          </GhostButton>
-
-          <PrimaryButton onClick={() => setModal("new")}>
+          <PrimaryButton onClick={() => setModal("new")} className="flex-1 sm:flex-none justify-center">
             <AppIcon name="ui.add" size={15} />
             Add Transaction
           </PrimaryButton>
+
+          <GhostButton onClick={exportCsv} title="Export CSV" className="shrink-0 justify-center px-3">
+            <AppIcon name="ui.download" size={14} />
+          </GhostButton>
         </div>
       </div>
 
-      {/* ================= Transactions Table ================= */}
-      <Card className="overflow-hidden">
+      {/* ================= Transactions: mobile cards ================= */}
+      <div className="md:hidden">
+        {filtered.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon={(p) => <AppIcon name="dashboard.recent" {...p} />}
+              title="No transactions found"
+              subtitle="Try adjusting your filters or add a new transaction"
+            />
+          </Card>
+        ) : (
+          <div className="space-y-2.5">
+            {filtered.map((t) => (
+              <Card key={t.id} className="p-4">
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`forge-card-icon w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 ${
+                      t.type === "Income" ? "bg-emerald-500/10" : "bg-white/5"
+                    }`}
+                  >
+                    <AppIcon
+                      name={txnIconName(t)}
+                      size={16}
+                      className={`forge-card-icon__glyph ${t.type === "Income" ? "text-emerald-500" : ""}`}
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="type-body font-medium truncate">{t.description || t.category}</p>
+                        <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
+                          {t.category} · {t.date}
+                        </p>
+                      </div>
+                      <p
+                        className={`text-[16px] font-semibold tracking-[-0.01em] shrink-0 ${
+                          t.type === "Income" ? "text-emerald-500" : t.type === "Transfer" ? "text-white/55" : "text-danger"
+                        }`}
+                      >
+                        {t.type === "Income" ? "+" : t.type === "Expense" ? "-" : ""}
+                        {fmt(t.amount)}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2.5 gap-2">
+                      <p className={`type-small-label truncate ${theme.subtext}`}>
+                        {accountName(t.account)}
+                        {t.type === "Transfer" && t.transferAccount ? ` → ${accountName(t.transferAccount)}` : ""}
+                        {emiPlanByTxnId.has(t.id) && (
+                          <Badge className="!bg-accent/12 !text-accent !border-0 rounded-full px-2 py-0.5 text-[10px] font-normal leading-4 ml-1.5 align-middle">
+                            EMI
+                          </Badge>
+                        )}
+                      </p>
+
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        {isEmiEligible(t) && (
+                          <IconBtn icon="ui.emi" onClick={() => setEmiModal(t)} title="Convert to EMI" />
+                        )}
+                        {emiPlanByTxnId.has(t.id) && (
+                          <IconBtn
+                            icon="ui.emi"
+                            onClick={() => setEmiScheduleForId(emiPlanByTxnId.get(t.id).id)}
+                            title="View EMI Schedule"
+                          />
+                        )}
+                        <IconBtn icon="ui.edit" onClick={() => setModal(t)} title="Edit" />
+                        <IconBtn icon="ui.delete" danger onClick={() => setDeleteTarget(t)} title="Delete" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ================= Transactions Table (desktop) ================= */}
+      <Card className="overflow-hidden hidden md:block">
 
         {filtered.length === 0 ? (
           <EmptyState

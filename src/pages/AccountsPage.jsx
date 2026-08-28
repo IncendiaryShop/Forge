@@ -139,17 +139,20 @@ export function AccountsPage() {
       <div className="flex justify-end">
         <PrimaryButton onClick={() => setModal("new")}><AppIcon name="ui.add" size={15} /> Add Account</PrimaryButton>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {data.accounts.map(a => {
           const isCreditCard = a.type === "Credit Card";
           const isLoan = a.type === "Loan";
           const bal = accountBalance(a.id);
           const isDisbursed = isLoan && data.loanInstallments.some((i) => i.accountId === a.id);
           return (
-            <Card key={a.id} className="p-7 relative group">
+            <Card key={a.id} className="p-5 sm:p-7 relative group">
               <div className="flex items-start justify-between">
                 <AccountLogo account={a} size="md" />
-                <div className="forge-card-actions flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                {/* Always visible on touch devices — hover-only actions are
+                    unreachable without a mouse, so they only fade out on
+                    lg+ where hover is reliable. */}
+                <div className="forge-card-actions flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
                   <IconBtn icon="ui.edit" onClick={() => setModal(a)} title="Edit" />
                   <IconBtn icon="ui.delete" danger onClick={() => requestDelete(a)} title="Delete" />
                 </div>

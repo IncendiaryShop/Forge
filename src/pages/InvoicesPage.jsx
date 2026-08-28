@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useApp } from "../context/AppContext";
-import { Card, Badge, PrimaryButton, IconBtn, Modal, EmptyState, Field, Select, GhostButton, TextInput, AppIcon, AccountLogo } from "../components";
+import { Card, Badge, PrimaryButton, IconBtn, Modal, EmptyState, Field, Select, GhostButton, TextInput, AppIcon, AccountLogo, DatePicker } from "../components";
 import { InvoiceForm } from "../forms/InvoiceForm";
 import { fmt, todayISO } from "../utils/helpers";
 
@@ -106,7 +106,7 @@ export function InvoicesPage() {
 
       <Card className="overflow-hidden">
 
-  <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 border-b border-white/[0.06]">
 
     <div>
       <h3 className="type-section-title">
@@ -121,7 +121,7 @@ export function InvoicesPage() {
     <select
       value={statusFilter}
       onChange={(e) => setStatusFilter(e.target.value)}
-      className={`forge-control px-3 py-2 rounded-[10px] border text-[13px] outline-none ${theme.input}`}
+      className={`forge-control px-3 py-2 rounded-[10px] border text-[13px] outline-none w-full sm:w-auto ${theme.input}`}
     >
       <option value="ALL">All Invoices</option>
       <option value="UNPAID">Unpaid</option>
@@ -133,7 +133,48 @@ export function InvoicesPage() {
   {sorted.length === 0 ? (
           <EmptyState icon={(p) => <AppIcon name="invoiceStates.invoice" {...p} />} title="No invoices yet" subtitle="Add your first invoice to start tracking payments" />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* -------- Mobile cards -------- */}
+          <div className="md:hidden divide-y divide-white/[0.06]">
+            {sorted.map(({ inv, info }) => (
+              <div key={inv.id} className="px-4 py-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="type-body font-medium truncate">{inv.invoiceNumber}</p>
+                    <p className={`type-small-label mt-0.5 truncate ${theme.subtext}`}>{inv.client}</p>
+                  </div>
+                  <p className="type-body font-semibold shrink-0">{fmt(inv.amount)}</p>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 mt-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Badge className={STATUS_STYLES[info.label]}>{info.label}</Badge>
+                    <p className={`type-small-label truncate ${theme.subtext}`}>
+                      {inv.invoiceDate}
+                      {info.sub ? ` · ${info.sub}` : ""}
+                    </p>
+                  </div>
+                </div>
+
+                {inv.status === "Paid" && (
+                  <p className={`type-small-label mt-1.5 ${theme.subtext}`}>
+                    Paid {inv.paymentDate || "—"} into {inv.paymentAccountId ? accountName(inv.paymentAccountId) : "—"}
+                  </p>
+                )}
+
+                <div className="flex items-center justify-end gap-1 mt-2.5">
+                  {inv.status !== "Paid" && (
+                    <IconBtn icon="invoiceStates.payment" onClick={() => openPayModal(inv)} title="Mark Paid" />
+                  )}
+                  <IconBtn icon="ui.edit" onClick={() => setModal(inv)} title="Edit" />
+                  <IconBtn icon="ui.delete" danger onClick={() => requestDelete(inv)} title="Delete" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* -------- Desktop table -------- */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-base">
               <thead>
                 <tr className={`type-small-label text-left text-white uppercase ${theme.tableHeader} border-b ${theme.rowBorder}`}>
@@ -174,6 +215,7 @@ export function InvoicesPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </Card>
 
@@ -187,7 +229,7 @@ export function InvoicesPage() {
         <Modal title={`Mark "${payModal.invoiceNumber}" as Paid`} onClose={() => setPayModal(null)}>
           <form onSubmit={confirmPay} className="space-y-4">
             <Field label="Payment Date">
-              <TextInput type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} required />
+              <DatePicker value={payDate} onChange={(e) => setPayDate(e.target.value)} required />
             </Field>
             <Field label="Received into account">
               <div className="flex items-center gap-3">

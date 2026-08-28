@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { Field, Select, PrimaryButton, AccountLogo } from "../components";
+import { Field, Select, DatePicker, PrimaryButton, AccountLogo } from "../components";
 import { ACCOUNT_TYPES } from "../utils/constants";
 import { BANKS, getBank } from "../utils/bankRegistry";
 import { calculateEmi } from "../utils/emi";
@@ -199,9 +199,8 @@ const loanTermsLocked = isLoan && !!existing && hasLoanSchedule;
               className="forge-control w-full px-3.5 py-2.5 rounded-[14px] border text-base outline-none" />
           </Field>
           <Field label="Start Date">
-            <input type="date" value={form.loanStartDate ?? ""} onChange={(e) => setForm({ ...form, loanStartDate: e.target.value })}
-              disabled={loanTermsLocked}
-              className={`forge-control w-full px-3.5 py-2.5 rounded-[14px] border text-base outline-none ${loanTermsLocked ? "opacity-50 cursor-not-allowed" : ""}`} />
+            <DatePicker value={form.loanStartDate ?? ""} onChange={(e) => setForm({ ...form, loanStartDate: e.target.value })}
+              disabled={loanTermsLocked} />
           </Field>
         </>
       )}

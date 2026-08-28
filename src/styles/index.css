@@ -18,7 +18,7 @@
      Typography
   ============================ */
 
-  ---font-sans: "Mona Sans";
+  --font-sans: "Mona Sans";
 
   /* ============================
      Colors
@@ -28,7 +28,7 @@
 --color-bg: #0A0A0A;
 --color-sidebar: #171717;
 --color-content: #0B0B0B;
---color-card: ##1c1c1c;
+--color-card: #1c1c1c;
 --color-elevated: #222222;
 
   /* Typography */
@@ -54,7 +54,7 @@
   --color-border-hover: rgba(255,255,255,0.10);
 
   /* Border Radius */
-  --radius-card: 12 px;
+  --radius-card: 12px;
   --radius-button: 14px;
   --radius-input: 12px;
 
@@ -68,6 +68,11 @@
 
 html {
   background: var(--color-bg);
+  /* Disable the browser's own native overscroll bounce/glow on the page's
+     main scroll container so the custom rubber-band motion (see
+     .forge-bounce-content below and hooks/useOverscrollBounce.js) is the
+     only bounce the user ever sees — avoids the two fighting each other. */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -83,6 +88,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 
   font-feature-settings: "liga", "calt";
+  overscroll-behavior-y: none;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -264,6 +270,16 @@ select {
 
 .forge-modal {
   animation: forge-modal-in 300ms var(--forge-ease) both;
+  /* Contain scroll chaining so scrolling this sheet to its own edge never
+     bubbles into (and rubber-bands) the page behind it. */
+  overscroll-behavior: contain;
+}
+
+/* Reusable on any independently-scrollable region (e.g. the installment
+   lists in EmiSchedule/LoanSchedule) that should never chain its own
+   boundary scroll into the page-level rubber-band effect. */
+.forge-scroll-contain {
+  overscroll-behavior: contain;
 }
 
 @keyframes forge-fade-in {
@@ -274,6 +290,20 @@ select {
 @keyframes forge-modal-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                      Mobile app-shell utilities                            */
+/* -------------------------------------------------------------------------- */
+
+/* Bottom nav sits above the Android/iOS gesture area; content scrolling
+   behind it gets matching bottom padding so nothing is ever hidden under it. */
+.forge-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.forge-mobile-nav-height {
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -292,6 +322,25 @@ select {
     animation: none;
     transition-duration: 0ms;
   }
+
+  /* The overscroll rubber-band is a pure motion flourish — the hook
+     itself already no-ops the pull when reduced motion is requested,
+     this is a defense-in-depth CSS-level guarantee it never shows. */
+  .forge-bounce-content {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Forge — Overscroll rubber-band feedback
+   -------------------------------------------------------------------------
+   .forge-bounce-content is the element nudged (via inline transform, set
+   from hooks/useOverscrollBounce.js) when the user overscrolls past the
+   real top/bottom of the page — motion only, no color. */
+
+.forge-bounce-content {
+  will-change: transform;
 }
 /* ------------------------------------------------------------------
    Forge — Specular Button Effect

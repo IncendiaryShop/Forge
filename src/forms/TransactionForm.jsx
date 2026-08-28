@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { Field, TextInput, Select, PrimaryButton } from "../components";
+import { Field, TextInput, Select, PrimaryButton, DatePicker } from "../components";
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from "../utils/constants";
 import { todayISO, fmt } from "../utils/helpers";
 
-export function TransactionForm({ onDone, existing }) {
+export function TransactionForm({ onDone, existing, defaultType }) {
   const { addTransaction, updateTransaction, data, accountOutstanding, insufficientFundsError, creditCardPaymentError } = useApp();
   // Loan accounts are never selectable here — money only ever moves in/out
   // of a Loan through the dedicated Disburse Loan / Loan Schedule "Mark
@@ -12,8 +12,12 @@ export function TransactionForm({ onDone, existing }) {
   // principal vs interest. A generic Expense/Income/Transfer against a Loan
   // account would bypass that split entirely.
   const selectableAccounts = data.accounts.filter((a) => a.type !== "Loan");
+  // defaultType only affects the NEW-transaction initial state (mobile quick
+  // actions preselect Expense/Income/Transfer) — editing an existing
+  // transaction is untouched, since `existing` always wins here.
+  const initialType = defaultType || "Expense";
   const [form, setForm] = useState(existing || {
-    date: todayISO(), type: "Expense", category: EXPENSE_CATEGORIES[0], description: "",
+    date: todayISO(), type: initialType, category: initialType === "Income" ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0], description: "",
     account: selectableAccounts[0]?.id || "", transferAccount: "", amount: "",
   });
   const cats = form.type === "Income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
@@ -102,7 +106,7 @@ export function TransactionForm({ onDone, existing }) {
           </Select>
         </Field>
         <Field label="Date">
-          <TextInput type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
+          <DatePicker value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -122,21 +126,27 @@ export function TransactionForm({ onDone, existing }) {
       <Field label="Description">
         <TextInput placeholder="e.g. Dinner with friends" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
       </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label={form.type === "Transfer" ? "From Account" : "Account"}>
-          <Select value={form.account} onChange={(e) => setForm({ ...form, account: e.target.value })}>
-            {selectableAccounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </Select>
-        </Field>
-        {form.type === "Transfer" && (
+      {form.type === "Transfer" ? (
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="From Account">
+            <Select value={form.account} onChange={(e) => setForm({ ...form, account: e.target.value })}>
+              {selectableAccounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </Select>
+          </Field>
           <Field label="To Account">
             <Select value={form.transferAccount} onChange={(e) => setForm({ ...form, transferAccount: e.target.value })}>
               <option value="">Select account</option>
               {selectableAccounts.filter(a => a.id !== form.account).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </Select>
           </Field>
-        )}
-      </div>
+        </div>
+      ) : (
+        <Field label="Account">
+          <Select value={form.account} onChange={(e) => setForm({ ...form, account: e.target.value })}>
+            {selectableAccounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </Select>
+        </Field>
+      )}
       {isCreditCardPayment && (
         <p className="type-secondary text-accent">
           Credit Card Payment — this will reduce {destinationAccount.name}'s outstanding balance.

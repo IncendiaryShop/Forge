@@ -20,7 +20,7 @@ import {
   faGamepad,
   faPlane,
   faShieldHalved,
-
+  
   faRotate,
   faReceipt,
   faPercent,
@@ -47,7 +47,7 @@ import {
   faFileInvoice,
   faTableColumns,
   faTriangleExclamation,
-
+  faIndianRupeeSign,
   faPlus,
   faPen,
   faTrash,
@@ -55,8 +55,10 @@ import {
   faDownload,
   faXmark,
   faCircleInfo,
+  faChevronLeft,
   faChevronRight,
   faRightFromBracket,
+  faEllipsis,
 } from "@fortawesome/free-solid-svg-icons";
 
 /* -------------------------------------------------------------------------
@@ -81,7 +83,6 @@ function fa(icon) {
     );
   };
 }
-
 
 /* -------------------------------------------------------------------------
    FONT AWESOME ICON COMPONENTS
@@ -131,7 +132,8 @@ const TrendingUp = fa(faArrowTrendUp);
 const TrendingDown = fa(faArrowTrendDown);
 const ChartPie = fa(faChartPie);
 const ReceiptText = fa(faFileInvoice);
-const LayoutDashboard = fa(faTableColumns);
+const Home = fa(faHouse);
+const IndianRupee = fa(faIndianRupeeSign);
 const TriangleAlert = fa(faTriangleExclamation);
 
 const Plus = fa(faPlus);
@@ -141,16 +143,16 @@ const Search = fa(faMagnifyingGlass);
 const Download = fa(faDownload);
 const XIcon = fa(faXmark);
 const InfoCircle = fa(faCircleInfo);
+const ChevronLeft = fa(faChevronLeft);
 const ChevronRight = fa(faChevronRight);
 const LogOut = fa(faRightFromBracket);
-
+const MoreHoriz = fa(faEllipsis);
 
 /* -------------------------------------------------------------------------
    SEMANTIC ICON REGISTRY
 ------------------------------------------------------------------------- */
 
 export const ICONS = {
-
   transactionTypes: {
     income: ArrowDownLeft,
     expense: ArrowUpRight,
@@ -219,18 +221,19 @@ export const ICONS = {
   },
 
   dashboard: {
-    home: LayoutDashboard,
-    balance: Wallet,
-    earnings: TrendingUp,
-    spending: TrendingDown,
-    cashflow: ArrowLeftRight,
-    budget: Target,
-    upcoming: CalendarClock,
-    breakdown: ChartPie,
-    recent: ReceiptText,
-    invoices: FileText,
-    _fallback: Receipt,
-  },
+  home: Home,
+  transactions: IndianRupee,
+  balance: Wallet,
+  earnings: TrendingUp,
+  spending: TrendingDown,
+  cashflow: ArrowLeftRight,
+  budget: Target,
+  upcoming: CalendarClock,
+  breakdown: ChartPie,
+  recent: ReceiptText,
+  invoices: FileText,
+  _fallback: Receipt,
+},
 
   bills: {
     bill: Receipt,
@@ -256,6 +259,7 @@ export const ICONS = {
      Generic interface icons — actions, chrome, and status glyphs used
      across pages/components rather than tied to a specific data domain.
   --------------------------------------------------------------------- */
+
   ui: {
     add: Plus,
     edit: Pencil,
@@ -264,6 +268,11 @@ export const ICONS = {
     download: Download,
     close: XIcon,
     info: InfoCircle,
+    rupee: IndianRupee,
+
+    calendar: CalendarClock,
+
+    chevronLeft: ChevronLeft,
     chevronRight: ChevronRight,
     signOut: LogOut,
     warning: TriangleAlert,
@@ -271,10 +280,11 @@ export const ICONS = {
     trendDown: TrendingDown,
     checkCircle: CircleCheck,
     emi: BadgePercent,
+    more: MoreHoriz,
+
     _fallback: InfoCircle,
   },
 };
-
 
 /**
  * Resolve a semantic icon by "group.key"

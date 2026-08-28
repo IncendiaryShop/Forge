@@ -49,6 +49,16 @@ function localDataIsEmpty(local) {
 //                            (e.g. a previous attempt partially failed, or data
 //                            was created some other way) — do NOT auto-migrate
 export async function getMigrationState(userId) {
+  // A profile is normally created by the auth.users signup trigger. However,
+  // the app must also recover if public data was reset while the auth user was
+  // kept. In that case the existing auth user has no profile row and `.single()`
+  // would return a 406, preventing the app from starting.
+  const { error: ensureProfileError } = await call(
+    supabase.from("profiles").upsert({ id: userId }, { onConflict: "id", ignoreDuplicates: true }),
+    "Couldn't initialize your profile."
+  );
+  if (ensureProfileError) return { state: "error", error: ensureProfileError };
+
   const { data: profile, error: profileError } = await call(
     supabase.from("profiles").select("migrated_at").eq("id", userId).single(),
     "Couldn't check migration status."

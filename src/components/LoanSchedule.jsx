@@ -3,6 +3,7 @@ import { useApp } from "../context/AppContext";
 import { Field } from "./Field";
 import { Select } from "./Select";
 import { TextInput } from "./TextInput";
+import { DatePicker } from "./DatePicker";
 import { PrimaryButton } from "./PrimaryButton";
 import { GhostButton } from "./GhostButton";
 import { Badge } from "./Badge";
@@ -138,7 +139,7 @@ export function LoanSchedule({ account, onDone }) {
         </div>
       </div>
 
-      <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+      <div className="space-y-2 max-h-64 overflow-y-auto pr-1 forge-scroll-contain">
         {installments.map((inst) => (
           <div key={inst.id} className={`flex items-center justify-between rounded-[12px] border px-3.5 py-2.5 ${theme.rowBorder}`}>
             <div className="min-w-0">
@@ -169,7 +170,7 @@ export function LoanSchedule({ account, onDone }) {
             </Select>
           </Field>
           <Field label="Payment Date">
-            <TextInput type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} required />
+            <DatePicker value={payDate} onChange={(e) => setPayDate(e.target.value)} required />
           </Field>
           {error && <p className="type-secondary text-red-500">{error}</p>}
           <div className="flex items-center gap-3">
@@ -198,7 +199,7 @@ export function LoanSchedule({ account, onDone }) {
                 </Select>
               </Field>
               <Field label="Settlement Date">
-                <TextInput type="date" value={precloseDate} onChange={(e) => setPrecloseDate(e.target.value)} required />
+                <DatePicker value={precloseDate} onChange={(e) => setPrecloseDate(e.target.value)} required />
               </Field>
               {precloseError && <p className="type-secondary text-red-500">{precloseError}</p>}
               <div className="flex items-center gap-3">

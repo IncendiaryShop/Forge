@@ -14,6 +14,10 @@ import { ResetPasswordScreen } from "./components/ResetPasswordScreen";
 import { MigrationGate } from "./components/MigrationGate";
 import { Sidebar } from "./components/Sidebar";
 import { MobileNav } from "./components/MobileNav";
+import { MobileBrandHeader } from "./components/MobileBrandHeader";
+import { Modal } from "./components/Modal";
+import { ScrollBounceBoundary } from "./components/ScrollBounceBoundary";
+import { TransactionForm } from "./forms/TransactionForm";
 import { Dashboard } from "./pages/Dashboard";
 import { TransactionsPage } from "./pages/TransactionsPage";
 import { AccountsPage } from "./pages/AccountsPage";
@@ -65,6 +69,11 @@ function AuthenticatedApp({ userId, onSignOut }) {
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
   const [page, setPage] = useState("dashboard");
+  // Global "quick add transaction" flow — surfaced from the mobile bottom
+  // nav's "+" button (see MobileNav.jsx) so it's reachable from any page,
+  // not just Transactions. Renders the same TransactionForm every other
+  // add-transaction entry point already uses.
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const channelsRef = useRef([]);
 
   const loadAll = useCallback(async () => {
@@ -304,6 +313,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
     theme,
     page,
     setPage,
+    openQuickAdd: () => setQuickAddOpen(true),
     accountBalance,
     accountOutstanding,
     insufficientFundsError,
@@ -598,19 +608,38 @@ function AuthenticatedApp({ userId, onSignOut }) {
         </div>
 
         <div className="relative z-10 flex-1 min-w-0 flex flex-col">
-          <main className="flex-1 w-full p-8 lg:p-10">
-            {page === "dashboard" && <Dashboard />}
-            {page === "transactions" && <TransactionsPage />}
-            {page === "accounts" && <AccountsPage />}
-            {page === "budget" && <BudgetPage />}
-            {page === "bills" && <BillsPage />}
-            {page === "invoices" && <InvoicesPage />}
-            {page === "goals" && <GoalsPage />}
+          {/* Mobile-only Forge branding — the Sidebar's logo is hidden
+              below md, so this fills that gap centrally (see
+              MobileBrandHeader.jsx). Hidden on md+ where the Sidebar's
+              own logo is visible instead. */}
+          <MobileBrandHeader />
+
+          {/* Bottom padding on mobile reserves space for the fixed bottom
+              nav (see MobileNav.jsx) so page content is never hidden
+              behind it; the nav now floats above the edge with its own
+              gap, so this is a touch taller than the bar itself. lg:
+              drops it since the sidebar layout has no bottom nav at all. */}
+          <main className="flex-1 w-full min-w-0 p-4 sm:p-6 lg:p-10 pb-20 md:pb-8 lg:pb-10">
+            <ScrollBounceBoundary>
+              {page === "dashboard" && <Dashboard />}
+              {page === "transactions" && <TransactionsPage />}
+              {page === "accounts" && <AccountsPage />}
+              {page === "budget" && <BudgetPage />}
+              {page === "bills" && <BillsPage />}
+              {page === "invoices" && <InvoicesPage />}
+              {page === "goals" && <GoalsPage />}
+            </ScrollBounceBoundary>
           </main>
 
           <MobileNav />
         </div>
       </div>
+
+      {quickAddOpen && (
+        <Modal title="Add Transaction" onClose={() => setQuickAddOpen(false)}>
+          <TransactionForm existing={null} onDone={() => setQuickAddOpen(false)} />
+        </Modal>
+      )}
     </AppCtx.Provider>
   );
 }

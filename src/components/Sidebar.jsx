@@ -114,7 +114,7 @@ export function Sidebar() {
               gap-3
               px-4
               h-11
-              rounded-2xl
+              rounded-[8px]
               border
               border-transparent
               text-white

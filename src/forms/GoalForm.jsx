@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { Field, TextInput, PrimaryButton } from "../components";
+import { Field, TextInput, DatePicker, PrimaryButton } from "../components";
 
 export function GoalForm({ onDone, existing }) {
   const { addGoal, updateGoal } = useApp();
@@ -26,7 +26,7 @@ export function GoalForm({ onDone, existing }) {
         </Field>
       </div>
       <Field label="Deadline">
-        <TextInput type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+        <DatePicker value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
       </Field>
       <PrimaryButton type="submit" className="w-full justify-center mt-2">{existing ? "Save Changes" : "Add Goal"}</PrimaryButton>
     </form>

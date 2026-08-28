@@ -7,13 +7,13 @@ import { Card } from "./Card";
 export function Kpi({ label, value, sub, trend, icon: Icon }) {
   const { theme } = useApp();
   return (
-    <Card className="p-8 group">
+    <Card className="p-5 sm:p-8 group">
       <div className="flex items-start justify-between">
-        <div>
+        <div className="min-w-0">
           <p className={`type-card-label opacity-80 ${theme.subtext}`}>{label}</p>
-          <p className="type-display-number mt-3">{value}</p>
+          <p className="type-display-number mt-2 sm:mt-3 truncate">{value}</p>
           {sub && (
-            <p className={`type-secondary mt-3 flex items-center gap-1 ${trend === "up" ? "text-emerald-500" : trend === "down" ? "text-red-500" : theme.faint}`}>
+            <p className={`type-secondary mt-2 sm:mt-3 flex items-center gap-1 ${trend === "up" ? "text-emerald-500" : trend === "down" ? "text-red-500" : theme.faint}`}>
               {trend === "up" && <AppIcon name="ui.trendUp" size={12} />}
               {trend === "down" && <AppIcon name="ui.trendDown" size={12} />}
               {sub}

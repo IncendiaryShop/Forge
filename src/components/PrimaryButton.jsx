@@ -10,7 +10,7 @@ export function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`forge-button type-button group relative inline-flex flex-row items-center justify-center
+      className={`forge-button type-button group relative inline-flex flex-row items-center justify-center min-w-0
        bg-accent text-[#171717] !font-medium tracking-[-0.01em]
         px-4 py-2.5 rounded-[10px]
         shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_20px_-6px_var(--accent-shadow,rgba(0,0,0,0.35))]
@@ -22,7 +22,7 @@ export function PrimaryButton({
         disabled:opacity-50 disabled:pointer-events-none disabled:translate-y-0
         ${className}`}
     >
-      <span className="relative inline-flex flex-row items-center gap-1.5 whitespace-nowrap">
+      <span className="relative inline-flex flex-row items-center gap-1.5 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis">
         {children}
       </span>
     </button>

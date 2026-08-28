@@ -137,82 +137,132 @@ export function BillsPage() {
             const display = resolveBillDisplay(b);
 
             return (
-              <div
-                key={b.id}
-                className={`flex items-center justify-between px-6 py-5 border-b last:border-0 ${theme.rowBorder}`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  {/* Current-cycle payment status */}
-                  <div
-                    className={`forge-button w-6 h-6 rounded-full flex items-center justify-center shrink-0   ${
-                      b.paid
-                        ? ""
-                        : theme.border
-                    }`}
-                    title={b.paid ? "Paid" : "Unpaid"}
-                  >
-                    {b.paid && <AppIcon name="bills.paid" size={15} />}
+              <div key={b.id} className={`border-b last:border-0 ${theme.rowBorder}`}>
+                {/* -------- Desktop row -------- */}
+                <div className="hidden md:flex items-center justify-between px-6 py-5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {/* Current-cycle payment status */}
+                    <div
+                      className={`forge-button w-6 h-6 rounded-full flex items-center justify-center shrink-0   ${
+                        b.paid
+                          ? ""
+                          : theme.border
+                      }`}
+                      title={b.paid ? "Paid" : "Unpaid"}
+                    >
+                      {b.paid && <AppIcon name="bills.paid" size={15} />}
+                    </div>
+
+                    {/* Brand logo OR semantic bill icon */}
+                    {display.kind === "brand" ? (
+                      <ServiceLogo provider={display.providerId} size="sm" />
+                    ) : (
+                      <AppIcon
+                        name={display.icon}
+                        size="md"
+                        container
+                      />
+                    )}
+
+                    {/* Bill information */}
+                    <div className="min-w-0">
+                      <p className="type-body font-medium truncate">
+                        {b.name}
+                      </p>
+
+                      <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
+                        {b.category} · Due day {b.dueDay}
+
+                        {overdue && (
+                          <span className="text-red-500 font-medium">
+                            {" "}
+                            · Overdue
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Brand logo OR semantic bill icon */}
-                  {display.kind === "brand" ? (
-                    <ServiceLogo provider={display.providerId} size="sm" />
-                  ) : (
-                    <AppIcon
-                      name={display.icon}
-                      size="md"
-                      container
+                  <div className="flex items-center gap-3 shrink-0 ml-4">
+                    <div className="text-right">
+                      <p className="type-body font-semibold">
+                        {fmt(b.amount)}
+                      </p>
+                    </div>
+
+                    {b.paid ? (
+                      <GhostButton onClick={() => setUndoTarget(b)}>
+                        Undo Payment
+                      </GhostButton>
+                    ) : (
+                      <PrimaryButton onClick={() => openPayModal(b)}>
+                        Mark Paid
+                      </PrimaryButton>
+                    )}
+
+                    <IconBtn
+                      icon="ui.edit"
+                      title="Edit"
+                      onClick={() => setModal(b)}
                     />
-                  )}
 
-                  {/* Bill information */}
-                  <div className="min-w-0">
-                    <p className="type-body font-medium truncate">
-                      {b.name}
-                    </p>
-
-                    <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
-                      {b.category} · Due day {b.dueDay}
-
-                      {overdue && (
-                        <span className="text-red-500 font-medium">
-                          {" "}
-                          · Overdue
-                        </span>
-                      )}
-                    </p>
+                    <IconBtn
+                      icon="ui.delete"
+                      danger
+                      title="Delete"
+                      onClick={() => setDeleteTarget(b)}
+                    />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0 ml-4">
-                  <div className="text-right">
-                    <p className="type-body font-semibold">
-                      {fmt(b.amount)}
-                    </p>
+                {/* -------- Mobile card -------- */}
+                <div className="md:hidden px-4 py-4">
+                  <div className="flex items-start gap-3">
+                    {display.kind === "brand" ? (
+                      <ServiceLogo provider={display.providerId} size="sm" />
+                    ) : (
+                      <AppIcon name={display.icon} size="md" container />
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="type-body font-medium truncate">{b.name}</p>
+                          <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
+                            {b.category} · Due day {b.dueDay}
+                            {overdue && <span className="text-red-500 font-medium"> · Overdue</span>}
+                          </p>
+                        </div>
+                        <p className="type-body font-semibold shrink-0">{fmt(b.amount)}</p>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 mt-3">
+                        <div className="flex items-center gap-1.5">
+                          {b.paid ? (
+                            <span className="type-small-label text-emerald-400 flex items-center gap-1">
+                              <AppIcon name="bills.paid" size={12} /> Paid
+                            </span>
+                          ) : (
+                            <span className={`type-small-label ${theme.subtext}`}>Unpaid</span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          {b.paid ? (
+                            <GhostButton className="!px-3 !py-1.5 text-[13px]" onClick={() => setUndoTarget(b)}>
+                              Undo
+                            </GhostButton>
+                          ) : (
+                            <PrimaryButton className="!px-3 !py-1.5 text-[13px]" onClick={() => openPayModal(b)}>
+                              Mark Paid
+                            </PrimaryButton>
+                          )}
+                          <IconBtn icon="ui.edit" title="Edit" onClick={() => setModal(b)} />
+                          <IconBtn icon="ui.delete" danger title="Delete" onClick={() => setDeleteTarget(b)} />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-
-                  {b.paid ? (
-                    <GhostButton onClick={() => setUndoTarget(b)}>
-                      Undo Payment
-                    </GhostButton>
-                  ) : (
-                    <PrimaryButton onClick={() => openPayModal(b)}>
-                      Mark Paid
-                    </PrimaryButton>
-                  )}
-
-                  <IconBtn
-                    icon="ui.edit"
-                    title="Edit"
-                    onClick={() => setModal(b)}
-                  />
-
-                  <IconBtn
-                    icon="ui.delete"
-                    danger
-                    title="Delete"
-                    onClick={() => setDeleteTarget(b)}
-                  />
                 </div>
               </div>
             );
@@ -233,35 +283,63 @@ export function BillsPage() {
             />
           ) : (
             activeEmiRows.map(({ plan, txn, account, paidCount, totalCount, nextDueDate }) => (
-              <div
-                key={plan.id}
-                className={`flex items-center justify-between px-6 py-5 border-b last:border-0 ${theme.rowBorder}`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <AppIcon name="ui.emi" size="md" container />
+              <div key={plan.id} className={`border-b last:border-0 ${theme.rowBorder}`}>
+                {/* -------- Desktop row -------- */}
+                <div className="hidden md:flex items-center justify-between px-6 py-5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <AppIcon name="ui.emi" size="md" container />
 
-                  <div className="min-w-0">
-                    <p className="type-body font-medium truncate">
-                      {txn?.description || txn?.category || "EMI"}
-                    </p>
+                    <div className="min-w-0">
+                      <p className="type-body font-medium truncate">
+                        {txn?.description || txn?.category || "EMI"}
+                      </p>
 
-                    <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
-                      {account?.name || "—"} · {fmt(plan.emiAmount)}/month
-                    </p>
+                      <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
+                        {account?.name || "—"} · {fmt(plan.emiAmount)}/month
+                      </p>
 
-                    <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
-                      {paidCount} of {totalCount} installments paid
-                      {nextDueDate && ` · Next due: ${formatDueDate(nextDueDate)}`}
-                    </p>
+                      <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
+                        {paidCount} of {totalCount} installments paid
+                        {nextDueDate && ` · Next due: ${formatDueDate(nextDueDate)}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0 ml-4">
+                    <Badge className="!bg-accent/12 !text-accent !border-0">{plan.status}</Badge>
+
+                    <GhostButton onClick={() => setEmiScheduleForId(plan.id)}>
+                      View Schedule
+                    </GhostButton>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0 ml-4">
-                  <Badge className="!bg-accent/12 !text-accent !border-0">{plan.status}</Badge>
-
-                  <GhostButton onClick={() => setEmiScheduleForId(plan.id)}>
-                    View Schedule
-                  </GhostButton>
+                {/* -------- Mobile card -------- */}
+                <div className="md:hidden px-4 py-4">
+                  <div className="flex items-start gap-3">
+                    <AppIcon name="ui.emi" size="md" container />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="type-body font-medium truncate">
+                          {txn?.description || txn?.category || "EMI"}
+                        </p>
+                        <Badge className="!bg-accent/12 !text-accent !border-0 shrink-0">{plan.status}</Badge>
+                      </div>
+                      <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
+                        {account?.name || "—"} · {fmt(plan.emiAmount)}/month
+                      </p>
+                      <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
+                        {paidCount} of {totalCount} paid
+                        {nextDueDate && ` · Next: ${formatDueDate(nextDueDate)}`}
+                      </p>
+                      <GhostButton
+                        className="w-full justify-center mt-3 !py-1.5 text-[13px]"
+                        onClick={() => setEmiScheduleForId(plan.id)}
+                      >
+                        View Schedule
+                      </GhostButton>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))

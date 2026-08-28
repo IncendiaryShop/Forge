@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { Field, TextInput, PrimaryButton } from "../components";
+import { Field, TextInput, DatePicker, PrimaryButton } from "../components";
 
 export function InvoiceForm({ onDone, existing }) {
   const { addInvoice, updateInvoice } = useApp();
@@ -43,7 +43,7 @@ export function InvoiceForm({ onDone, existing }) {
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Invoice Date">
-          <TextInput type="date" value={form.invoiceDate} onChange={(e) => setForm({ ...form, invoiceDate: e.target.value })} required disabled={isPaid} />
+          <DatePicker value={form.invoiceDate} onChange={(e) => setForm({ ...form, invoiceDate: e.target.value })} required disabled={isPaid} />
         </Field>
         <Field label="Amount (₹)">
           <TextInput type="number" min="0.01" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required disabled={isPaid} />

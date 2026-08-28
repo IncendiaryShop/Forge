@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../context/AppContext";
-import { Field, TextInput, PrimaryButton, GhostButton } from "../components";
+import { Field, TextInput, PrimaryButton, GhostButton, DatePicker } from "../components";
 import { fmt, todayISO } from "../utils/helpers";
 import { calculateEmi } from "../utils/emi";
 
@@ -82,7 +82,7 @@ export function EmiConvertForm({ transaction, onDone }) {
       </div>
 
       <Field label="Start Date">
-        <TextInput type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+        <DatePicker value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
       </Field>
 
       <div className={`rounded-[14px] border p-4 space-y-2 ${theme.border} bg-white/[0.02]`}>

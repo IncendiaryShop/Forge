@@ -285,6 +285,12 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- Repair profile rows for auth users that already existed when public data was
+-- cleared or recreated. This is safe to run repeatedly.
+insert into public.profiles (id)
+select id from auth.users
+on conflict (id) do nothing;
+
 -- ============================================================================
 -- increment_goal — atomic contribution.
 -- SECURITY INVOKER (the default), so the UPDATE runs as the calling user and

@@ -36,16 +36,16 @@ export function GoalsPage() {
       {data.goals.length === 0 ? (
         <Card className="p-7"><EmptyState icon={(p) => <AppIcon name="goals.savings" {...p} />} title="No savings goals" subtitle="Set a goal to start tracking progress" /></Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {data.goals.map(g => {
             const pct = g.target > 0 ? (g.current / g.target) * 100 : 0;
             return (
-              <Card key={g.id} className="p-7 group">
+              <Card key={g.id} className="p-5 sm:p-7 group">
                 <div className="flex items-start justify-between">
                   <div className="forge-card-icon w-10 h-10 rounded-[14px] bg-white/5 flex items-center justify-center">
                     <AppIcon name="goals.savings" size={17} className="forge-card-icon__glyph" />
                   </div>
-                  <div className="forge-card-actions flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                  <div className="forge-card-actions flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
                     <IconBtn icon="ui.edit" onClick={() => setModal(g)} title="Edit" />
                     <IconBtn icon="ui.delete" danger onClick={() => setDeleteTarget(g)} title="Delete" />
                   </div>

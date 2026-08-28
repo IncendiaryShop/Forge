@@ -14,7 +14,8 @@ import {
   Legend
 } from "recharts";
 import { useApp } from "../context/AppContext";
-import { Card, Kpi, EmptyState, ProgressBar, ServiceLogo, AppIcon } from "../components";
+import { Card, Kpi, EmptyState, ProgressBar, ServiceLogo, AppIcon, Modal } from "../components";
+import { TransactionForm } from "../forms/TransactionForm";
 import { CHART_COLORS } from "../utils/constants";
 import { fmt, monthKey, todayISO } from "../utils/helpers";
 import { computeBillStatus, statusLabel, badgeFor } from "../utils/billCycle";
@@ -246,6 +247,11 @@ export function Dashboard() {
 
   const [periodType, setPeriodType] = useState("monthly");
   const [upcomingTab, setUpcomingTab] = useState("payments"); // "payments" | "emi"
+  // Mobile-only quick action shortcut — prefills the same TransactionForm
+  // used everywhere else with a starting type so the two most common
+  // actions (log an expense / log income) are one tap away from the
+  // dashboard, matching the "3. Quick actions" mobile priority.
+  const [quickAddType, setQuickAddType] = useState(null); // "Expense" | "Income" | null
 
   const [monthSel, setMonthSel] = useState({
     month: new Date().getMonth(),
@@ -451,7 +457,7 @@ export function Dashboard() {
     yDomainMax: top
   };
 }, [transactions, cashFlowData]);
-  const selectCls = `forge-control px-2.5 py-1.5 rounded-[10px] border text-[13px] outline-none w-auto ${theme.input}`;
+  const selectCls = `forge-control px-2.5 py-1.5 rounded-[10px] border text-[13px] outline-none w-full sm:w-auto min-w-0 truncate ${theme.input}`;
 
   const recent = sortTransactionsDesc(transactions).slice(0, 5);
 
@@ -595,9 +601,97 @@ export function Dashboard() {
 
         </div>
 
+        {/* ================= Quick Actions (mobile only) ================= */}
+        <div className="grid grid-cols-4 gap-2.5 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setQuickAddType("Expense")}
+            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-white/[0.08] bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
+          >
+            <span className="forge-card-icon w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+              <AppIcon name="transactionTypes.expense" size={14} />
+            </span>
+            <span className="text-[11px] font-medium leading-none">Expense</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setQuickAddType("Income")}
+            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-white/[0.08] bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
+          >
+            <span className="forge-card-icon w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <AppIcon name="transactionTypes.income" size={14} className="text-emerald-500" />
+            </span>
+            <span className="text-[11px] font-medium leading-none">Income</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setQuickAddType("Transfer")}
+            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-white/[0.08] bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
+          >
+            <span className="forge-card-icon w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+              <AppIcon name="transactionTypes.transfer" size={14} />
+            </span>
+            <span className="text-[11px] font-medium leading-none">Transfer</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPage("budget")}
+            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-white/[0.08] bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
+          >
+            <span className="forge-card-icon w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+              <AppIcon name="dashboard.budget" size={14} />
+            </span>
+            <span className="text-[11px] font-medium leading-none">Budget</span>
+          </button>
+        </div>
+
+        {/* ================= Budget Overview (mobile only) =================
+            Desktop already surfaces this in the "Budget Remaining" card in
+            the right rail below; mobile prioritizes it higher up the page
+            (see mobile priority order in the Phase 1 brief), so it's
+            duplicated here in a compact form rather than restructuring the
+            whole two-column grid. */}
+        <Card className="p-5 lg:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className={`type-small-label ${theme.subtext}`}>Budget Remaining</p>
+              <p className="type-section-title mt-1">{fmt(Math.max(0, budgetRemaining))}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPage("budget")}
+              className="forge-link type-button text-accent flex items-center gap-0.5 shrink-0 hover:gap-1"
+            >
+              Manage
+              <AppIcon name="ui.chevronRight" size={12} />
+            </button>
+          </div>
+          <div className="mt-3.5">
+            <ProgressBar
+              pct={budgetTotal > 0 ? (budgetSpent / budgetTotal) * 100 : 0}
+              colorClass={budgetSpent > budgetTotal ? "bg-red-500" : "bg-accent"}
+            />
+            <div className="flex items-center justify-between mt-1.5">
+              <p className={`type-small-label ${theme.subtext}`}>{fmt(budgetSpent)} of {fmt(budgetTotal)}</p>
+              <p className={`type-small-label ${theme.subtext}`}>
+                {budgetTotal > 0 ? Math.round((budgetSpent / budgetTotal) * 100) : 0}% used
+              </p>
+            </div>
+          </div>
+          {budgetSpent > budgetTotal && budgetTotal > 0 && (
+            <p className="type-secondary text-red-500 mt-2.5 flex items-center gap-1">
+              <AppIcon name="ui.warning" size={12} />
+              Over budget this month
+            </p>
+          )}
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.8fr)_minmax(280px,1fr)] gap-4 items-stretch">
 
-          <Card className="p-8 min-w-0">
+          <Card className="p-5 sm:p-8 min-w-0">
 
             <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
 
@@ -632,7 +726,7 @@ export function Dashboard() {
 
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap justify-end">
+              <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
 
                 <select
                   value={periodType}
@@ -783,7 +877,7 @@ export function Dashboard() {
 
             <div className="flex flex-col lg:flex-row gap-6 items-stretch">
 
-              <div className="h-80 flex-1 min-w-0">
+              <div className="h-64 sm:h-80 w-full lg:flex-1 min-w-0">
 
                 <ResponsiveContainer
                   width="100%"
@@ -847,6 +941,9 @@ export function Dashboard() {
 
                     <XAxis
                       dataKey="label"
+                      tickFormatter={(value) =>
+                        typeof value === "string" ? value.split(" ")[0] : value
+                      }
                       tick={{
                         fontSize: 12,
                         fill: "#808080",
@@ -940,7 +1037,7 @@ export function Dashboard() {
 
           </Card>
 
-          <Card className="p-8 min-w-0">
+          <Card className="p-5 sm:p-8 min-w-0">
 
             <div className="flex items-center justify-between mb-4">
 
@@ -1113,7 +1210,7 @@ export function Dashboard() {
 
         </div>
 
-        <Card className="p-8">
+        <Card className="p-5 sm:p-8">
 
           <div className="flex items-center justify-between mb-6">
 
@@ -1786,6 +1883,16 @@ export function Dashboard() {
         </Card>
 
       </div>
+
+      {quickAddType && (
+        <Modal title="Add Transaction" onClose={() => setQuickAddType(null)}>
+          <TransactionForm
+            existing={null}
+            defaultType={quickAddType}
+            onDone={() => setQuickAddType(null)}
+          />
+        </Modal>
+      )}
 
     </div>
   );

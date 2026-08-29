@@ -21,7 +21,7 @@ export function BudgetForm({ onDone, category, currentAmount }) {
         </Select>
       </Field>
       <Field label="Monthly Budget (₹)">
-        <TextInput type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+        <TextInput type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
       </Field>
       <PrimaryButton type="submit" className="w-full justify-center mt-2">Save Budget</PrimaryButton>
     </form>

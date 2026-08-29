@@ -141,9 +141,10 @@ const loanTermsLocked = isLoan && !!existing && hasLoanSchedule;
       <Field label={isCreditCard ? "Opening Outstanding (₹)" : isLoan ? "Original Principal (₹)" : "Balance (₹)"}>
   <input
     type="number"
+    step="0.01"
     value={form.opening}
     onChange={(e) => setForm({ ...form, opening: e.target.value })}
-    placeholder="0"
+    placeholder="0.00"
     disabled={openingOutstandingLocked || loanTermsLocked}
     className={`forge-control w-full px-3.5 py-2.5 rounded-[14px] border text-base outline-none ${
       openingOutstandingLocked || loanTermsLocked ? "opacity-50 cursor-not-allowed" : ""

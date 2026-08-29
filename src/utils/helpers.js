@@ -5,7 +5,7 @@ export const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export function fmt(n) {
   const v = Number(n) || 0;
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(v);
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 }
 
 export function monthKey(dateStr) {

@@ -19,10 +19,10 @@ export function GoalForm({ onDone, existing }) {
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Target (₹)">
-          <TextInput type="number" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} required />
+          <TextInput type="number" min="0.01" step="0.01" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} required />
         </Field>
         <Field label="Current Saved (₹)">
-          <TextInput type="number" value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })} />
+          <TextInput type="number" min="0" step="0.01" value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })} />
         </Field>
       </div>
       <Field label="Deadline">

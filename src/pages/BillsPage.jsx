@@ -16,6 +16,7 @@ import {
   EmiSchedule,
 } from "../components";
 import { BillForm } from "../forms/BillForm";
+import { AddEmiPlanForm } from "../forms/AddEmiPlanForm";
 import { fmt } from "../utils/helpers";
 import { computeBillStatus } from "../utils/billCycle";
 import { resolveBillDisplay } from "../utils/billRegistry";
@@ -38,6 +39,7 @@ export function BillsPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [undoTarget, setUndoTarget] = useState(null);
   const [emiScheduleForId, setEmiScheduleForId] = useState(null); // emi plan id | null
+  const [addEmiModal, setAddEmiModal] = useState(false);
   const [payError, setPayError] = useState("");
 
   const today = new Date();
@@ -272,14 +274,26 @@ export function BillsPage() {
 
       {/* ================= EMI Payments ================= */}
       <div className="space-y-4">
-        <h2 className="type-section-title">EMI Payments</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="type-section-title">EMI Payments</h2>
+          <PrimaryButton onClick={() => setAddEmiModal(true)}>
+            <AppIcon name="ui.add" size={18} />
+            Add EMI Plan
+          </PrimaryButton>
+        </div>
 
         <Card>
           {activeEmiRows.length === 0 ? (
             <EmptyState
               icon={(p) => <AppIcon name="ui.emi" {...p} />}
               title="No active EMI plans"
-              subtitle="Convert a Credit Card expense to EMI from the Transactions page."
+              subtitle="Convert a Credit Card expense to EMI from the Transactions page, or add one that already exists on your card."
+              action={
+                <PrimaryButton onClick={() => setAddEmiModal(true)}>
+                  <AppIcon name="ui.add" size={18} />
+                  Add EMI Plan
+                </PrimaryButton>
+              }
             />
           ) : (
             activeEmiRows.map(({ plan, txn, account, paidCount, totalCount, nextDueDate }) => (
@@ -291,7 +305,7 @@ export function BillsPage() {
 
                     <div className="min-w-0">
                       <p className="type-body font-medium truncate">
-                        {txn?.description || txn?.category || "EMI"}
+                        {plan.name || txn?.description || txn?.category || "EMI"}
                       </p>
 
                       <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
@@ -321,7 +335,7 @@ export function BillsPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <p className="type-body font-medium truncate">
-                          {txn?.description || txn?.category || "EMI"}
+                          {plan.name || txn?.description || txn?.category || "EMI"}
                         </p>
                         <Badge className="!bg-accent/12 !text-accent !border-0 shrink-0">{plan.status}</Badge>
                       </div>
@@ -489,6 +503,16 @@ export function BillsPage() {
               </PrimaryButton>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* ================= Add EMI Plan Modal ================= */}
+      {addEmiModal && (
+        <Modal
+          title="Add EMI Plan"
+          onClose={() => setAddEmiModal(false)}
+        >
+          <AddEmiPlanForm onDone={() => setAddEmiModal(false)} />
         </Modal>
       )}
 

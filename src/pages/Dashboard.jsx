@@ -209,8 +209,8 @@ export function Dashboard() {
     .reduce((s, t) => s + Number(t.amount), 0);
 
   const totalBalance = accounts
-    .filter((a) => a.type !== "Loan")
-    .reduce((s, a) => s + accountBalance(a.id), 0);
+  .filter((a) => a.type !== "Loan" && a.type !== "Credit Card")
+  .reduce((s, a) => s + accountBalance(a.id), 0);
 
   const budgetTotal = Object.values(budgets).reduce(
     (s, v) => s + Number(v),

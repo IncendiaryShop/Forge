@@ -80,7 +80,7 @@ export function EmiSchedule({ plan, onDone }) {
       return;
     }
     setError("");
-    const description = `EMI ${payTarget.installmentNumber}/${plan.tenureMonths} — ${originalTxn?.description || originalTxn?.category || "Purchase"}`;
+    const description = `EMI ${payTarget.installmentNumber}/${plan.tenureMonths} — ${plan.name || originalTxn?.description || originalTxn?.category || "Purchase"}`;
     payEmiInstallment(payTarget, payAccount, payDate, description);
     setPayTarget(null);
   };
@@ -114,7 +114,7 @@ export function EmiSchedule({ plan, onDone }) {
       return;
     }
     setPrecloseError("");
-    const description = `EMI pre-closure — ${originalTxn?.description || originalTxn?.category || "Purchase"}`;
+    const description = `EMI pre-closure — ${plan.name || originalTxn?.description || originalTxn?.category || "Purchase"}`;
     precloseEmiPlan(plan.id, precloseAccount, precloseDate, description);
     setPrecloseTarget(false);
   };
@@ -123,7 +123,7 @@ export function EmiSchedule({ plan, onDone }) {
     <div className="space-y-5">
       <div className={`rounded-[14px] border p-4 ${theme.border} bg-white/[0.02]`}>
         <div className="flex items-center justify-between gap-3">
-          <p className="type-body font-semibold truncate">{originalTxn?.description || originalTxn?.category || "Purchase"}</p>
+          <p className="type-body font-semibold truncate">{plan.name || originalTxn?.description || originalTxn?.category || "Purchase"}</p>
           <Badge className={PLAN_STATUS_STYLES[plan.status] || PLAN_STATUS_STYLES.Active}>{PLAN_STATUS_LABELS[plan.status] || plan.status}</Badge>
         </div>
         <p className={`type-secondary mt-0.5 ${theme.subtext}`}>

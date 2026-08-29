@@ -26,6 +26,8 @@ const fromPlanRow = (r) => ({
   id: r.id,
   transactionId: r.transaction_id,
   accountId: r.account_id,
+  name: r.name,
+  source: r.source,
   principal: Number(r.principal),
   interestRate: Number(r.interest_rate),
   tenureMonths: r.tenure_months,

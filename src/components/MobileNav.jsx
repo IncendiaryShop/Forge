@@ -37,7 +37,7 @@ function NavButton({ item, active, onClick, badge }) {
       "
     >
       <span
-        className={`relative flex items-center justify-center w-12 h-11 rounded-full transition-all duration-200 ${
+        className={`relative flex items-center justify-center w-13 h-11 rounded-full transition-all duration-200 ${
           active
             ? "bg-accent text-white"
             : "text-white/50"
@@ -144,7 +144,7 @@ export function MobileNav() {
               flex
               items-stretch
               w-full
-              h-[60px]
+              h-[56px]
               rounded-full
               bg-elevated
               border

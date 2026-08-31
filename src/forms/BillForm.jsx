@@ -16,12 +16,17 @@ export function BillForm({ onDone, existing }) {
 
   const preview = resolveBillDisplay(form);
 
+  const isCustom = (form.provider || "custom") === CUSTOM_SERVICE.id;
+
   const onProviderChange = (providerId) => {
     const billType = BILL_TYPES.find((t) => t.id === providerId);
+    const brand = BRAND_SERVICES.find((s) => s.id === providerId);
+    const label = billType?.name || brand?.name || "";
     setForm((f) => ({
       ...f,
       provider: providerId,
       category: billType && !categoryTouched ? billType.category : f.category,
+      name: providerId === CUSTOM_SERVICE.id ? f.name : label,
     }));
   };
 
@@ -37,8 +42,19 @@ export function BillForm({ onDone, existing }) {
       setError("Due day must be a whole number between 1 and 31.");
       return;
     }
+    const provider = form.provider || "custom";
+    const billType = BILL_TYPES.find((t) => t.id === provider);
+    const brand = BRAND_SERVICES.find((s) => s.id === provider);
+    const resolvedName =
+      provider === CUSTOM_SERVICE.id
+        ? (form.name || "").trim()
+        : billType?.name || brand?.name || (form.name || "").trim();
+    if (!resolvedName) {
+      setError("Name is required.");
+      return;
+    }
     setError("");
-    const payload = { ...form, name: form.name.trim(), amount, dueDay, provider: form.provider || "custom" };
+    const payload = { ...form, name: resolvedName, amount, dueDay, provider };
     if (existing) updateBill(existing.id, payload); else addBill(payload);
     onDone();
   };
@@ -64,6 +80,16 @@ export function BillForm({ onDone, existing }) {
           </Select>
         </div>
       </Field>
+      {isCustom && (
+        <Field label="Name">
+          <TextInput
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="e.g. Gym Membership"
+            required
+          />
+        </Field>
+      )}
       <div className="grid grid-cols-2 gap-3">
         <Field label="Category">
           <Select value={form.category} onChange={(e) => { setCategoryTouched(true); setForm({ ...form, category: e.target.value }); }}>

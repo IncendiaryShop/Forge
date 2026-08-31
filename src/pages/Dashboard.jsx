@@ -19,6 +19,7 @@ import { TransactionForm } from "../forms/TransactionForm";
 import { CHART_COLORS } from "../utils/constants";
 import { fmt, monthKey, todayISO } from "../utils/helpers";
 import { computeBillStatus, statusLabel, badgeFor } from "../utils/billCycle";
+import { resolveBillDisplay } from "../utils/billRegistry";
 import { sortTransactionsDesc, relativeDate } from "../utils/transactionUtils";
 
 const tooltipStyle = {
@@ -179,21 +180,6 @@ export function Dashboard() {
   const { transactions, accounts, budgets } = data;
 
   const thisMonth = todayISO().slice(0, 7);
-
-  const getBillIcon = (bill) => {
-    const text = `${bill.name || ""} ${bill.category || ""}`.toLowerCase();
-
-    if (text.includes("electric")) return "bills.electricity";
-    if (text.includes("water")) return "bills.water";
-    if (text.includes("gas")) return "bills.gas";
-    if (text.includes("internet") || text.includes("wifi")) return "bills.internet";
-    if (text.includes("phone") || text.includes("mobile")) return "bills.phone";
-    if (text.includes("rent")) return "bills.rent";
-    if (text.includes("insurance")) return "bills.insurance";
-    if (text.includes("loan") || text.includes("emi")) return "bills.loan";
-
-    return "bills.bill";
-  };
 
   const monthTxns = useMemo(
     () => transactions.filter((t) => monthKey(t.date) === thisMonth),
@@ -1400,6 +1386,7 @@ export function Dashboard() {
                   {upcomingPayments.map((p) => {
 
                     const badge = badgeFor(p);
+                    const display = resolveBillDisplay(p);
 
                     return (
 
@@ -1415,17 +1402,17 @@ export function Dashboard() {
 
                           <div className="flex items-center gap-3 min-w-0">
 
-                            {p.provider ? (
+                            {display.kind === "brand" ? (
 
                               <ServiceLogo
-                                provider={p.provider}
-                                size="widget"
+                                provider={display.providerId}
+                                size="sm"
                               />
 
                             ) : (
 
                               <AppIcon
-                                name={getBillIcon(p)}
+                                name={display.icon}
                                 size="md"
                                 container
                               />

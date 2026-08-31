@@ -10,13 +10,10 @@ const navById = Object.fromEntries(
 );
 
 /* -------------------------------------------------------------------------
-   Mobile bottom navigation — Dashboard | Transactions | + | Budget | More.
+   Mobile bottom navigation — Dashboard | Transactions | Accounts | Recurring | More.
 
    The navigation is displayed as a floating rounded pill near the bottom
    of the screen.
-
-   The center "+" button is part of the navigation bar itself and is
-   vertically centered within the bar.
 
    Desktop navigation is unaffected because this component is md:hidden.
 ------------------------------------------------------------------------- */
@@ -31,10 +28,8 @@ function NavButton({ item, active, onClick, badge }) {
       className="
         relative
         flex
-        flex-col
         items-center
         justify-center
-        gap-1
         flex-1
         h-full
         min-w-0
@@ -42,43 +37,43 @@ function NavButton({ item, active, onClick, badge }) {
       "
     >
       <span
-        className={`relative flex items-center justify-center w-13 h-8 rounded-full transition-colors duration-200 ${
+        className={`relative flex items-center justify-center w-12 h-11 rounded-full transition-all duration-200 ${
           active
-            ? "bg-accent/15 text-accent"
-            : "text-white/55"
+            ? "bg-accent text-white"
+            : "text-white/50"
         }`}
       >
         <AppIcon
           name={item.icon}
           size={18}
         />
-
-        {badge > 0 && !active && (
-          <span
-            className="
-              absolute
-              -top-1
-              -right-1
-              min-w-[16px]
-              h-4
-              px-1
-              flex
-              items-center
-              justify-center
-              rounded-full
-              bg-accent
-              text-[10px]
-              font-bold
-              text-white
-              leading-none
-            "
-          >
-            {badge}
-          </span>
-        )}
       </span>
 
-      {/* Navigation labels intentionally hidden */}
+      {badge > 0 && !active && (
+        <span
+          className="
+            absolute
+            top-1.5
+            right-[calc(50%-19px)]
+            min-w-[16px]
+            h-4
+            px-1
+            flex
+            items-center
+            justify-center
+            rounded-full
+            bg-accent
+            text-[10px]
+            font-bold
+            text-white
+            leading-none
+            ring-2
+            ring-elevated
+          "
+        >
+          {badge}
+        </span>
+      )}
     </button>
   );
 }
@@ -89,7 +84,6 @@ export function MobileNav() {
     setPage,
     signOut,
     data,
-    openQuickAdd,
   } = useApp();
 
   const [moreOpen, setMoreOpen] = useState(false);
@@ -150,11 +144,13 @@ export function MobileNav() {
               flex
               items-stretch
               w-full
-              h-12
+              h-[60px]
               rounded-full
               bg-elevated
+              border
+              border-white/[0.06]
               backdrop-blur-xl
-              shadow-[0_10px_28px_rgba(0,0,0,0.35)]
+              shadow-[0_12px_32px_-4px_rgba(0,0,0,0.5)]
             "
           >
             {/* Dashboard */}
@@ -171,51 +167,19 @@ export function MobileNav() {
               onClick={() => goTo("transactions")}
             />
 
-            {/* -------------------------------------------------------------
-                Center + button
-            ------------------------------------------------------------- */}
-            <div
-              className="
-                relative
-                flex
-                items-center
-                justify-center
-                flex-1
-                min-w-0
-              "
-            >
-              <button
-                type="button"
-                onClick={openQuickAdd}
-                aria-label="Add transaction"
-                title="Add transaction"
-                className="
-                  forge-button
-                  flex
-                  items-center
-                  justify-center
-                  w-14
-                  h-14
-                  shrink-0
-                  rounded-full
-                  bg-accent
-                  text-[#171717]
-                  active:scale-95
-                  transition-transform
-                "
-              >
-                <AppIcon
-                  name="ui.add"
-                  size={20}
-                />
-              </button>
-            </div>
-
-            {/* Budget */}
+            {/* Accounts */}
             <NavButton
-              item={navById["budget"]}
-              active={page === "budget"}
-              onClick={() => goTo("budget")}
+              item={navById["accounts"]}
+              active={page === "accounts"}
+              onClick={() => goTo("accounts")}
+            />
+
+            {/* Recurring */}
+            <NavButton
+              item={navById["bills"]}
+              active={page === "bills"}
+              onClick={() => goTo("bills")}
+              badge={billsDueSoon}
             />
 
             {/* More */}
@@ -238,10 +202,10 @@ export function MobileNav() {
               "
             >
               <span
-                className={`relative flex items-center justify-center w-10 h-8 rounded-full transition-colors duration-200 ${
+                className={`relative flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 ${
                   moreIsActive
-                    ? "bg-accent/15 text-accent"
-                    : "text-white/55"
+                    ? "bg-accent text-white"
+                    : "text-white/50"
                 }`}
               >
                 <AppIcon

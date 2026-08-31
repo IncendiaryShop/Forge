@@ -6,7 +6,7 @@ import { useAuth } from "./context/AuthCtx";
 import { theme } from "./styles/theme";
 import { PAGE_TITLES } from "./utils/constants";
 import { getActiveBillingCycle } from "./utils/billCycle";
-import { fmt } from "./utils/helpers";
+import { fmt, todayISO } from "./utils/helpers";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import { ConfigError } from "./components/ConfigError";
 import { AuthGate } from "./components/AuthGate";
@@ -413,7 +413,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
       }
 
       const resolvedAccount = accountId || bill.account || data.accounts[0]?.id || "";
-      const dateStr = new Date().toISOString().slice(0, 10);
+      const dateStr = todayISO();
       const r = await withError(billsSvc.payBill(userId, bill, resolvedAccount, dateStr));
       if (r.data) setData((d) => d && ({
         ...d,
@@ -440,7 +440,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
       if (invoice.status === "Paid" || invoice.transactionId) return;
 
       const resolvedAccount = accountId || data.accounts[0]?.id || "";
-      const resolvedDate = paymentDate || new Date().toISOString().slice(0, 10);
+      const resolvedDate = paymentDate || todayISO();
       const r = await withError(invoicesSvc.payInvoice(userId, invoice, resolvedAccount, resolvedDate));
       if (r.data) setData((d) => d && ({
         ...d,

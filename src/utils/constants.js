@@ -74,18 +74,17 @@ export const PAGE_TITLES = {
 };
 
 // Mobile bottom navigation is intentionally shallower than the desktop
-// sidebar: Home | Transactions | + Add | Budget | More. Everything else
-// (plus Sign out) lives behind the "More" sheet — see MobileNav.jsx.
+// sidebar: Home | Transactions | Accounts | Recurring | More. Everything
+// else (plus Sign out) lives behind the "More" sheet — see MobileNav.jsx.
 
 export const MOBILE_NAV_PRIMARY = [
   "dashboard",
   "transactions",
-  "budget",
+  "accounts",
+  "bills",
 ];
 
 export const MOBILE_NAV_MORE = [
-  "accounts",
-  "bills",
   "invoices",
   "goals",
 ];

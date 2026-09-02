@@ -36,37 +36,3 @@ export function calculateEmi(principal, annualRatePercent, tenureMonths) {
 
   return { emiAmount, totalPayable, totalInterest };
 }
-
-/* ----------------------------- Manual EMI totals ----------------------------- */
-/* Used by the "Add EMI Plan" manual-registration flow (AddEmiPlanForm) for an
-   EMI that already exists on the user's card. Unlike calculateEmi() above,
-   the EMI amount here is entered directly by the user, not derived from
-   principal/rate/tenure — so it's never rounded to a whole rupee; it's
-   ordinary decimal money input (see fmt() in utils/helpers.js), not the EMI
-   repayment model's own rounding.
-
-   totalPayable is simply emiAmount * remainingTenureMonths — the last
-   installment absorbs any remainder server-side (create_manual_emi_plan(),
-   supabase/schema.sql), same pattern as calculateEmi()'s totalPayable.
-   totalInterest is whatever's left over the outstanding principal, floored
-   at 0 — informational only, never fed back into the schedule math.
-
-   coversPrincipal is false when the entered EMI × tenure doesn't even add
-   up to the outstanding principal — a likely data-entry mismatch worth
-   surfacing, but never a reason to block submission (interest can
-   legitimately make the totals differ either way). */
-export function computeManualEmiTotals(outstandingPrincipal, emiAmount, remainingTenureMonths) {
-  const P = Number(outstandingPrincipal) || 0;
-  const emi = Number(emiAmount) || 0;
-  const n = Math.max(0, Math.trunc(Number(remainingTenureMonths) || 0));
-
-  if (emi <= 0 || n <= 0) {
-    return { totalPayable: 0, totalInterest: 0, coversPrincipal: true };
-  }
-
-  const totalPayable = emi * n;
-  const totalInterest = Math.max(0, totalPayable - P);
-  const coversPrincipal = totalPayable >= P;
-
-  return { totalPayable, totalInterest, coversPrincipal };
-}

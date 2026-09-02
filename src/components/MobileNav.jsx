@@ -12,8 +12,14 @@ const navById = Object.fromEntries(
 /* -------------------------------------------------------------------------
    Mobile bottom navigation — Dashboard | Transactions | Accounts | Recurring | More.
 
-   The navigation is displayed as a floating rounded pill near the bottom
-   of the screen.
+   Responsive behavior:
+   - Outer navigation width follows the available mobile viewport width.
+   - Outer navigation height scales with viewport width.
+   - Five navigation items share the available width equally.
+   - Active pill width is 78% of its navigation slot.
+   - Active pill height fills the navigation height minus 16px.
+   - 8px vertical inset is maintained at every mobile size.
+   - Active pill radius remains fully rounded as its dimensions scale.
 
    Desktop navigation is unaffected because this component is md:hidden.
 ------------------------------------------------------------------------- */
@@ -37,11 +43,22 @@ function NavButton({ item, active, onClick, badge }) {
       "
     >
       <span
-        className={`relative flex items-center justify-center w-12 h-11 rounded-full transition-all duration-200 ${
-          active
-            ? "bg-accent text-white"
-            : "text-white/50"
-        }`}
+        className={`
+          relative
+          flex
+          items-center
+          justify-center
+          w-[78%]
+          h-[calc(100%-16px)]
+          rounded-full
+          transition-all
+          duration-200
+          ${
+            active
+              ? "bg-accent text-white"
+              : "text-white/50"
+          }
+        `}
       >
         <AppIcon
           name={item.icon}
@@ -53,7 +70,7 @@ function NavButton({ item, active, onClick, badge }) {
         <span
           className="
             absolute
-            top-1.5
+            top-[calc(50%-24px)]
             right-[calc(50%-19px)]
             min-w-[16px]
             h-4
@@ -116,12 +133,7 @@ export function MobileNav() {
   return (
     <>
       {/* -----------------------------------------------------------------
-          Floating mobile navigation.
-
-          left-4 / right-4 gives the floating navigation the same general
-          horizontal inset as the mobile page content.
-
-          bottom-6 controls the distance from the bottom of the viewport.
+          Floating mobile navigation
       ----------------------------------------------------------------- */}
       <nav
         className="
@@ -133,10 +145,18 @@ export function MobileNav() {
           z-40
         "
       >
-        <div className="relative w-full max-w-md mx-auto">
+        <div className="relative w-full">
 
           {/* ---------------------------------------------------------------
-              Floating navigation pill
+              Responsive floating navigation
+
+              Height:
+                clamp(52px, 15vw, 60px)
+
+              This means:
+                - never smaller than 52px
+                - scales with viewport width
+                - never larger than 60px
           --------------------------------------------------------------- */}
           <div
             className="
@@ -144,7 +164,7 @@ export function MobileNav() {
               flex
               items-stretch
               w-full
-              h-[60px]
+              h-[clamp(52px,15vw,60px)]
               rounded-full
               bg-elevated
               border
@@ -202,11 +222,22 @@ export function MobileNav() {
               "
             >
               <span
-                className={`relative flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 ${
-                  moreIsActive
-                    ? "bg-accent text-white"
-                    : "text-white/50"
-                }`}
+                className={`
+                  relative
+                  flex
+                  items-center
+                  justify-center
+                  w-[78%]
+                  h-[calc(100%-16px)]
+                  rounded-full
+                  transition-all
+                  duration-200
+                  ${
+                    moreIsActive
+                      ? "bg-accent text-white"
+                      : "text-white/50"
+                  }
+                `}
               >
                 <AppIcon
                   name="ui.more"
@@ -236,11 +267,22 @@ export function MobileNav() {
                   key={id}
                   type="button"
                   onClick={() => goTo(id)}
-                  className={`w-full flex items-center gap-3 px-4 h-12 rounded-[14px] transition-colors duration-150 ${
-                    active
-                      ? "bg-accent/12 text-accent"
-                      : "text-text hover:bg-white/[0.04]"
-                  }`}
+                  className={`
+                    w-full
+                    flex
+                    items-center
+                    gap-3
+                    px-4
+                    h-12
+                    rounded-[14px]
+                    transition-colors
+                    duration-150
+                    ${
+                      active
+                        ? "bg-accent/12 text-accent"
+                        : "text-text hover:bg-white/[0.04]"
+                    }
+                  `}
                 >
                   <AppIcon
                     name={item.icon}

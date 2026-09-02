@@ -6,15 +6,9 @@ const fromRow = (r) => ({
   id: r.id,
   transactionId: r.transaction_id,
   accountId: r.account_id,
-  // Only ever set for a manually-registered plan (source === "manual") — a
-  // converted plan has no name of its own and the UI falls back to its
-  // original transaction's description/category instead (see
-  // EmiSchedule.jsx / BillsPage.jsx).
+  // Optional name retained for compatibility with existing EMI records.
   name: r.name,
-  // "converted" (created via convertToEmi from a real Expense transaction)
-  // or "manual" (registered directly for an EMI that already exists on the
-  // card — see addManualEmiPlan in App.jsx). Every plan created before this
-  // distinction existed is "converted".
+  // Source is retained for compatibility with existing EMI records.
   source: r.source,
   principal: Number(r.principal),
   interestRate: Number(r.interest_rate),
@@ -75,40 +69,6 @@ export async function createEmiPlan(userId, plan) {
       p_start_date: plan.startDate,
     }),
     "Couldn't convert this transaction to EMI."
-  );
-  if (error) return { data: null, error };
-  return {
-    data: {
-      plan: fromRow(data.plan),
-      installments: (data.installments || []).map(fromInstallmentRow),
-    },
-    error: null,
-  };
-}
-
-// Registers an EMI that already exists on a Credit Card — no source
-// transaction, via the atomic create_manual_emi_plan() RPC: validates the
-// account is owned by the caller and is a Credit Card, inserts the plan
-// (source: "manual", no transaction_id), and generates its remaining
-// installment schedule starting from `plan.firstDueDate`, in one database
-// transaction. This never inserts into public.transactions, so the card's
-// outstanding — already accounted for by the EMI the user is registering —
-// is completely unaffected. See supabase/schema.sql (Phase 11) for the full
-// server-side validation.
-export async function createManualEmiPlan(userId, plan) {
-  const { data, error } = await call(
-    supabase.rpc("create_manual_emi_plan", {
-      p_account_id: plan.accountId,
-      p_name: plan.name,
-      p_principal: Number(plan.principal),
-      p_interest_rate: Number(plan.interestRate) || 0,
-      p_tenure_months: Number(plan.tenureMonths),
-      p_emi_amount: Number(plan.emiAmount),
-      p_total_interest: Number(plan.totalInterest),
-      p_total_payable: Number(plan.totalPayable),
-      p_first_due_date: plan.firstDueDate,
-    }),
-    "Couldn't add this EMI plan."
   );
   if (error) return { data: null, error };
   return {

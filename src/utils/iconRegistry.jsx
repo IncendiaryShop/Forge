@@ -57,6 +57,8 @@ import {
   faCircleInfo,
   faChevronLeft,
   faChevronRight,
+  faChevronDown,
+  faCheck,
   faRightFromBracket,
   faEllipsis,
 } from "@fortawesome/free-solid-svg-icons";
@@ -145,6 +147,8 @@ const XIcon = fa(faXmark);
 const InfoCircle = fa(faCircleInfo);
 const ChevronLeft = fa(faChevronLeft);
 const ChevronRight = fa(faChevronRight);
+const ChevronDown = fa(faChevronDown);
+const Check = fa(faCheck);
 const LogOut = fa(faRightFromBracket);
 const MoreHoriz = fa(faEllipsis);
 
@@ -274,6 +278,8 @@ export const ICONS = {
 
     chevronLeft: ChevronLeft,
     chevronRight: ChevronRight,
+    chevronDown: ChevronDown,
+    check: Check,
     signOut: LogOut,
     warning: TriangleAlert,
     trendUp: TrendingUp,

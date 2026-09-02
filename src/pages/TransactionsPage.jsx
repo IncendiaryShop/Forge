@@ -10,6 +10,7 @@ import {
   EmptyState,
   AppIcon,
   EmiSchedule,
+  Select,
 } from "../components";
 
 import { TransactionForm } from "../forms/TransactionForm";
@@ -172,7 +173,7 @@ export function TransactionsPage() {
 
           <div className="flex items-center gap-2.5">
             {/* Type Filter */}
-            <select
+            <Select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               className={`${filterSelectCls} flex-1 sm:flex-none`}
@@ -181,10 +182,10 @@ export function TransactionsPage() {
               <option value="Income">Income</option>
               <option value="Expense">Expense</option>
               <option value="Transfer">Transfer</option>
-            </select>
+            </Select>
 
             {/* Category Filter */}
-            <select
+            <Select
               value={catFilter}
               onChange={(e) => setCatFilter(e.target.value)}
               className={`${filterSelectCls} flex-1 sm:flex-none`}
@@ -196,7 +197,7 @@ export function TransactionsPage() {
                   {c}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 

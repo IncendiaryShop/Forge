@@ -479,21 +479,6 @@ function AuthenticatedApp({ userId, onSignOut }) {
         emiInstallments: [...d.emiInstallments, ...r.data.installments],
       }));
     },
-    // Registers an EMI that already exists on a Credit Card — no source
-    // transaction, so unlike convertToEmi above this never touches
-    // public.transactions. The card's outstanding (accountOutstanding(),
-    // derived purely from transactions) is therefore completely unaffected —
-    // the EMI is already reflected in it, and this call must not double-count
-    // it. See services/emiPlans.js createManualEmiPlan() / supabase/schema.sql
-    // create_manual_emi_plan() (Phase 11).
-    addManualEmiPlan: async (payload) => {
-      const r = await withError(emiPlansSvc.createManualEmiPlan(userId, payload));
-      if (r.data) setData((d) => d && ({
-        ...d,
-        emiPlans: [...d.emiPlans, r.data.plan],
-        emiInstallments: [...d.emiInstallments, ...r.data.installments],
-      }));
-    },
     deleteEmiPlan: async (id) => {
       const r = await withError(emiPlansSvc.deleteEmiPlan(id));
       if (!r.error) setData((d) => d && ({

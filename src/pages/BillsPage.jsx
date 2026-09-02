@@ -16,7 +16,6 @@ import {
   EmiSchedule,
 } from "../components";
 import { BillForm } from "../forms/BillForm";
-import { AddEmiPlanForm } from "../forms/AddEmiPlanForm";
 import { fmt } from "../utils/helpers";
 import { computeBillStatus } from "../utils/billCycle";
 import { resolveBillDisplay } from "../utils/billRegistry";
@@ -39,7 +38,6 @@ export function BillsPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [undoTarget, setUndoTarget] = useState(null);
   const [emiScheduleForId, setEmiScheduleForId] = useState(null); // emi plan id | null
-  const [addEmiModal, setAddEmiModal] = useState(false);
   const [payError, setPayError] = useState("");
 
   const today = new Date();
@@ -276,10 +274,6 @@ export function BillsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="type-section-title">EMI Payments</h2>
-          <PrimaryButton onClick={() => setAddEmiModal(true)}>
-            <AppIcon name="ui.add" size={18} />
-            Add EMI Plan
-          </PrimaryButton>
         </div>
 
         <Card>
@@ -287,13 +281,7 @@ export function BillsPage() {
             <EmptyState
               icon={(p) => <AppIcon name="ui.emi" {...p} />}
               title="No active EMI plans"
-              subtitle="Convert a Credit Card expense to EMI from the Transactions page, or add one that already exists on your card."
-              action={
-                <PrimaryButton onClick={() => setAddEmiModal(true)}>
-                  <AppIcon name="ui.add" size={18} />
-                  Add EMI Plan
-                </PrimaryButton>
-              }
+              subtitle="Convert a Credit Card expense to EMI from the Transactions page to start tracking its installments."
             />
           ) : (
             activeEmiRows.map(({ plan, txn, account, paidCount, totalCount, nextDueDate }) => (
@@ -503,16 +491,6 @@ export function BillsPage() {
               </PrimaryButton>
             </div>
           </div>
-        </Modal>
-      )}
-
-      {/* ================= Add EMI Plan Modal ================= */}
-      {addEmiModal && (
-        <Modal
-          title="Add EMI Plan"
-          onClose={() => setAddEmiModal(false)}
-        >
-          <AddEmiPlanForm onDone={() => setAddEmiModal(false)} />
         </Modal>
       )}
 

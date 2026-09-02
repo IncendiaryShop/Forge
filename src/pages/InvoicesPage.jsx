@@ -118,7 +118,7 @@ export function InvoicesPage() {
       </p>
     </div>
 
-    <select
+    <Select
       value={statusFilter}
       onChange={(e) => setStatusFilter(e.target.value)}
       className={`forge-control px-3 py-2 rounded-[10px] border text-[13px] outline-none w-full sm:w-auto ${theme.input}`}
@@ -126,7 +126,7 @@ export function InvoicesPage() {
       <option value="ALL">All Invoices</option>
       <option value="UNPAID">Unpaid</option>
       <option value="PAID">Paid</option>
-    </select>
+    </Select>
 
   </div>
 

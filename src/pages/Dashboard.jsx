@@ -14,7 +14,7 @@ import {
   Legend
 } from "recharts";
 import { useApp } from "../context/AppContext";
-import { Card, Kpi, EmptyState, ProgressBar, ServiceLogo, AppIcon, Modal } from "../components";
+import { Card, Kpi, EmptyState, ProgressBar, ServiceLogo, AppIcon, Modal, Select } from "../components";
 import { TransactionForm } from "../forms/TransactionForm";
 import { CHART_COLORS } from "../utils/constants";
 import { fmt, monthKey, todayISO } from "../utils/helpers";
@@ -538,7 +538,7 @@ export function Dashboard() {
   }, [data.invoices]);
 
   return (
-    <div className="grid grid-cols-12 gap-5 items-start">
+    <div className="grid grid-cols-12 gap-x-5 gap-y-0 lg:gap-y-5 items-start">
 
       <div className="col-span-12 lg:col-span-9 space-y-5 min-w-0">
 
@@ -634,46 +634,6 @@ export function Dashboard() {
           </button>
         </div>
 
-        {/* ================= Budget Overview (mobile only) =================
-            Desktop already surfaces this in the "Budget Remaining" card in
-            the right rail below; mobile prioritizes it higher up the page
-            (see mobile priority order in the Phase 1 brief), so it's
-            duplicated here in a compact form rather than restructuring the
-            whole two-column grid. */}
-        <Card className="p-5 lg:hidden">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className={`type-small-label ${theme.subtext}`}>Budget Remaining</p>
-              <p className="type-section-title mt-1">{fmt(Math.max(0, budgetRemaining))}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setPage("budget")}
-              className="forge-link type-button text-accent flex items-center gap-0.5 shrink-0 hover:gap-1"
-            >
-              Manage
-              <AppIcon name="ui.chevronRight" size={12} />
-            </button>
-          </div>
-          <div className="mt-3.5">
-            <ProgressBar
-              pct={budgetTotal > 0 ? (budgetSpent / budgetTotal) * 100 : 0}
-              colorClass={budgetSpent > budgetTotal ? "bg-red-500" : "bg-accent"}
-            />
-            <div className="flex items-center justify-between mt-1.5">
-              <p className={`type-small-label ${theme.subtext}`}>{fmt(budgetSpent)} of {fmt(budgetTotal)}</p>
-              <p className={`type-small-label ${theme.subtext}`}>
-                {budgetTotal > 0 ? Math.round((budgetSpent / budgetTotal) * 100) : 0}% used
-              </p>
-            </div>
-          </div>
-          {budgetSpent > budgetTotal && budgetTotal > 0 && (
-            <p className="type-secondary text-red-500 mt-2.5 flex items-center gap-1">
-              <AppIcon name="ui.warning" size={12} />
-              Over budget this month
-            </p>
-          )}
-        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.8fr)_minmax(280px,1fr)] gap-4 items-stretch">
 
@@ -714,7 +674,7 @@ export function Dashboard() {
 
               <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
 
-                <select
+                <Select
                   value={periodType}
                   onChange={(e) =>
                     handlePeriodTypeChange(
@@ -734,11 +694,11 @@ export function Dashboard() {
                   <option value="yearly">
                     Yearly
                   </option>
-                </select>
+                </Select>
 
                 {periodType === "monthly" && (
                   <>
-                    <select
+                    <Select
                       value={monthSel.month}
                       onChange={(e) =>
                         setMonthSel((s) => ({
@@ -758,9 +718,9 @@ export function Dashboard() {
                           {m}
                         </option>
                       ))}
-                    </select>
+                    </Select>
 
-                    <select
+                    <Select
                       value={monthSel.year}
                       onChange={(e) =>
                         setMonthSel((s) => ({
@@ -780,13 +740,13 @@ export function Dashboard() {
                           {y}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </>
                 )}
 
                 {periodType === "quarterly" && (
                   <>
-                    <select
+                    <Select
                       value={quarterSel.quarter}
                       onChange={(e) =>
                         setQuarterSel((s) => ({
@@ -806,9 +766,9 @@ export function Dashboard() {
                           {`Q${q}`}
                         </option>
                       ))}
-                    </select>
+                    </Select>
 
-                    <select
+                    <Select
                       value={quarterSel.year}
                       onChange={(e) =>
                         setQuarterSel((s) => ({
@@ -828,12 +788,12 @@ export function Dashboard() {
                           {y}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </>
                 )}
 
                 {periodType === "yearly" && (
-                  <select
+                  <Select
                     value={yearSel}
                     onChange={(e) =>
                       setYearSel(
@@ -850,7 +810,7 @@ export function Dashboard() {
                         {y}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 )}
 
               </div>
@@ -1196,7 +1156,7 @@ export function Dashboard() {
 
         </div>
 
-        <Card className="p-5 sm:p-8">
+        <Card className="p-5 sm:p-8 hidden lg:block">
 
           <div className="flex items-center justify-between mb-6">
 
@@ -1313,9 +1273,9 @@ export function Dashboard() {
 
       </div>
 
-      <div className="col-span-12 lg:col-span-3 space-y-5 min-w-0">
+      <div className="col-span-12 lg:col-span-3 lg:space-y-5 min-w-0">
 
-        <Card className="p-5">
+        <Card className="p-5 hidden lg:block">
 
           <div className="flex items-center justify-between mb-4 gap-3">
 
@@ -1754,7 +1714,7 @@ export function Dashboard() {
 
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-5 hidden lg:block">
 
           <h3 className="type-section-title mb-4">
             Budget Remaining

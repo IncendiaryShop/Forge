@@ -67,7 +67,7 @@ export function BillForm({ onDone, existing }) {
           ) : (
             <AppIcon name={preview.icon} size="md" container />
           )}
-          <Select value={form.provider || "custom"} onChange={(e) => onProviderChange(e.target.value)} className="flex-1">
+          <Select value={form.provider || "custom"} onChange={(e) => onProviderChange(e.target.value)}>
             <optgroup label="Common Bills">
               {BILL_TYPES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </optgroup>

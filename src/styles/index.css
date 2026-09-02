@@ -282,6 +282,42 @@ select {
   overscroll-behavior: contain;
 }
 
+/* Themed scrollbar for independently-scrollable Forge surfaces (the
+   <Select /> dropdown listbox, modal sheets, and anything else using
+   .forge-scroll-contain / .forge-modal). Mobile Safari/Chrome already
+   render a translucent overlay scrollbar that blends into any theme for
+   free, which is why this was only ever noticeable on desktop — without
+   these rules, desktop browsers fall back to the OS's own (light/gray)
+   scrollbar, which clashes with the dark theme. */
+.forge-scroll-contain,
+.forge-modal {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--color-elevated) transparent;
+}
+
+.forge-scroll-contain::-webkit-scrollbar,
+.forge-modal::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.forge-scroll-contain::-webkit-scrollbar-track,
+.forge-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.forge-scroll-contain::-webkit-scrollbar-thumb,
+.forge-modal::-webkit-scrollbar-thumb {
+  background-color: var(--color-elevated);
+  border: 2px solid var(--color-card);
+  border-radius: 999px;
+}
+
+.forge-scroll-contain::-webkit-scrollbar-thumb:hover,
+.forge-modal::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border-hover);
+}
+
 @keyframes forge-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }

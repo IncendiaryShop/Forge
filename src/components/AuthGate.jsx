@@ -169,7 +169,7 @@ export function AuthGate() {
         >
           {mode === "signup"
             ? "Get started with Forge today"
-            : "Enter your email and password"}
+            : "Enter your Credentials"}
         </p>
 
         {/* Email */}

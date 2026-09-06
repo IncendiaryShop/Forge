@@ -20,7 +20,7 @@ import {
   faGamepad,
   faPlane,
   faShieldHalved,
-  
+
   faRotate,
   faReceipt,
   faPercent,
@@ -45,7 +45,6 @@ import {
   faArrowTrendDown,
   faChartPie,
   faFileInvoice,
-  faTableColumns,
   faTriangleExclamation,
   faIndianRupeeSign,
   faPlus,
@@ -61,19 +60,8 @@ import {
   faCheck,
   faRightFromBracket,
   faEllipsis,
+  faEye,
 } from "@fortawesome/free-solid-svg-icons";
-
-/* -------------------------------------------------------------------------
-   Icon System V2 — centralized semantic icon registry.
-
-   Forge uses Font Awesome as its central icon library.
-
-   The semantic names remain unchanged so the rest of the application
-   does not need to know which icon library is being used.
-
-   Real-world brand/service logos remain separate and continue to live
-   in serviceRegistry.js.
-------------------------------------------------------------------------- */
 
 function fa(icon) {
   return function ForgeFontAwesomeIcon(props) {
@@ -85,10 +73,6 @@ function fa(icon) {
     );
   };
 }
-
-/* -------------------------------------------------------------------------
-   FONT AWESOME ICON COMPONENTS
-------------------------------------------------------------------------- */
 
 const ArrowDownLeft = fa(faArrowDown);
 const ArrowUpRight = fa(faArrowUp);
@@ -128,6 +112,7 @@ const Banknote = fa(faMoneyBill);
 
 const Target = fa(faBullseye);
 const PlusCircle = fa(faCirclePlus);
+const Eye = fa(faEye);
 const CalendarClock = fa(faCalendarDays);
 
 const TrendingUp = fa(faArrowTrendUp);
@@ -151,10 +136,6 @@ const ChevronDown = fa(faChevronDown);
 const Check = fa(faCheck);
 const LogOut = fa(faRightFromBracket);
 const MoreHoriz = fa(faEllipsis);
-
-/* -------------------------------------------------------------------------
-   SEMANTIC ICON REGISTRY
-------------------------------------------------------------------------- */
 
 export const ICONS = {
   transactionTypes: {
@@ -259,11 +240,6 @@ export const ICONS = {
     _fallback: Receipt,
   },
 
-  /* ---------------------------------------------------------------------
-     Generic interface icons — actions, chrome, and status glyphs used
-     across pages/components rather than tied to a specific data domain.
-  --------------------------------------------------------------------- */
-
   ui: {
     add: Plus,
     edit: Pencil,
@@ -287,17 +263,12 @@ export const ICONS = {
     checkCircle: CircleCheck,
     emi: BadgePercent,
     more: MoreHoriz,
+    view: Eye,
 
     _fallback: InfoCircle,
   },
 };
 
-/**
- * Resolve a semantic icon by "group.key"
- * Example: "categories.food"
- *
- * Always returns a valid component.
- */
 export function resolveIcon(name) {
   if (!name || typeof name !== "string") {
     return Receipt;

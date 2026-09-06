@@ -1,46 +1,10 @@
--- ============================================================================
--- Phase 8 fix — resolves two audit failures in EMI pre-closure:
---
--- 1. preclose_emi_plan() previously reused 'Cancelled' as its terminal
---    status, indistinguishable from a genuinely abandoned EMI. Adds a new
---    'Preclosed' status instead — "remaining obligation intentionally
---    settled early", distinct from 'Cancelled' ("abandoned") and
---    'Completed' ("paid off via normal installments").
---
--- 2. preclose_emi_plan() assigned the SAME payment_transaction_id to every
---    remaining installment it settled in one shot. The existing "Undo" flow
---    (unpayEmiInstallment, services/emiInstallments.js) assumes one
---    installment maps to one payment transaction, so undoing any single
---    pre-closure-settled installment would delete the shared settlement
---    transaction and corrupt every sibling installment that pointed at it.
---    Adds an explicit `settled_via_preclosure` flag so the frontend can
---    identify and refuse to Undo those installments, without touching
---    ordinary single-installment payments (pay_emi_installment) at all —
---    those remain fully undoable exactly as before.
---
--- Idempotent: safe to re-run.
--- ============================================================================
-
--- 1) New terminal status. Inline CHECK constraints on a single column get
--- Postgres's default name `<table>_<column>_check` (same convention this
--- project already relies on for FK names in schema.sql's bills/invoices
--- back-reference block) — dropped and re-added with the new allowed value.
 alter table public.emi_plans
   drop constraint if exists emi_plans_status_check,
   add constraint emi_plans_status_check check (status in ('Active', 'Completed', 'Cancelled', 'Preclosed'));
 
--- 2) Explicit "was this installment settled by a pre-closure batch, not an
--- individual payment" marker. Defaults false, so every existing installment
--- (all settled individually up to this point) is correctly unaffected.
 alter table public.emi_installments
   add column if not exists settled_via_preclosure boolean not null default false;
 
--- ============================================================================
--- preclose_emi_plan — redefined. Same validation/atomicity/ownership model
--- as before (Phase 3/4 checks, ownership via auth.uid(), security invoker,
--- single implicit transaction, row-locked on emi_plans for concurrency
--- safety) — only the terminal status and the new installment flag change.
--- ============================================================================
 create or replace function public.preclose_emi_plan(
   p_plan_id uuid,
   p_source_account_id uuid,
@@ -95,8 +59,6 @@ begin
     raise exception 'Credit Card account not found or not owned by the current user';
   end if;
 
-  -- Phase 3: Bank/Cash insufficient-funds check — identical formula to
-  -- pay_emi_installment()'s hardening / accountBalance() in App.jsx.
   if v_source.type <> 'Credit Card' then
     select coalesce(v_source.opening, 0)
       + coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = p_source_account_id), 0)
@@ -112,8 +74,6 @@ begin
     end if;
   end if;
 
-  -- Phase 4: Credit Card outstanding check — identical formula to
-  -- pay_emi_installment()'s hardening / accountOutstanding() in App.jsx.
   select coalesce(v_card.opening, 0)
     + coalesce(sum(t.amount) filter (where t.type = 'Expense' and t.account_id = v_plan.account_id), 0)
     - coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = v_plan.account_id), 0)
@@ -134,14 +94,6 @@ begin
   values (v_user_id, p_date, 'Transfer', 'EMI', coalesce(p_description, 'EMI pre-closure'), p_source_account_id, v_plan.account_id, v_remaining_amount)
   returning * into v_txn;
 
-  -- Only rows that weren't already Paid are touched — a previously-paid
-  -- installment's status/paid_date/payment_transaction_id is left exactly as
-  -- it was, so paid history never gets rewritten or double-counted.
-  -- settled_via_preclosure = true is the explicit marker the frontend uses
-  -- to refuse "Undo" on these rows (they share one transaction; undoing any
-  -- one of them would incorrectly reverse the whole settlement and corrupt
-  -- the others) — ordinary pay_emi_installment() payments never set this
-  -- flag, so their Undo continues to work exactly as before.
   update public.emi_installments
   set status = 'Paid', paid_date = p_date, payment_transaction_id = v_txn.id, settled_via_preclosure = true
   where emi_plan_id = v_plan.id and user_id = v_user_id and status <> 'Paid';

@@ -103,7 +103,7 @@ export function BillForm({ onDone, existing }) {
       <Field label="Due Day of Month">
         <TextInput type="number" min="1" max="31" value={form.dueDay} onChange={(e) => setForm({ ...form, dueDay: e.target.value })} />
       </Field>
-      {error && <p className="type-secondary text-red-500">{error}</p>}
+      {error && <p className="type-secondary text-danger">{error}</p>}
       <PrimaryButton type="submit" className="w-full justify-center mt-2">{existing ? "Save Changes" : "Add Bill"}</PrimaryButton>
     </form>
   );

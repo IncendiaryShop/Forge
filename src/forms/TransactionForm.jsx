@@ -6,15 +6,9 @@ import { todayISO, fmt } from "../utils/helpers";
 
 export function TransactionForm({ onDone, existing, defaultType }) {
   const { addTransaction, updateTransaction, data, accountOutstanding, insufficientFundsError, creditCardPaymentError } = useApp();
-  // Loan accounts are never selectable here — money only ever moves in/out
-  // of a Loan through the dedicated Disburse Loan / Loan Schedule "Mark
-  // Paid" flows (AccountsPage.jsx / LoanSchedule.jsx), which correctly split
-  // principal vs interest. A generic Expense/Income/Transfer against a Loan
-  // account would bypass that split entirely.
+
   const selectableAccounts = data.accounts.filter((a) => a.type !== "Loan");
-  // defaultType only affects the NEW-transaction initial state (mobile quick
-  // actions preselect Expense/Income/Transfer) — editing an existing
-  // transaction is untouched, since `existing` always wins here.
+
   const initialType = defaultType || "Expense";
   const [form, setForm] = useState(existing || {
     date: todayISO(), type: initialType, category: initialType === "Income" ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0], description: "",
@@ -26,15 +20,11 @@ export function TransactionForm({ onDone, existing, defaultType }) {
   const destinationAccount = data.accounts.find((a) => a.id === form.transferAccount);
   const isCreditCardPayment = form.type === "Transfer" && destinationAccount?.type === "Credit Card";
 
-  // Only Expenses against a Credit Card account are limit-checked. When
-  // editing an existing Expense on the same card, its old amount is backed
-  // out of the current outstanding first so the check compares against what
-  // outstanding would be WITHOUT this transaction, not double-counted.
   const creditLimitError = (accountId, amount) => {
     const acc = data.accounts.find((a) => a.id === accountId);
     if (!acc || acc.type !== "Credit Card") return null;
     const limit = Number(acc.creditLimit);
-    if (!limit || limit <= 0) return null; // no limit set yet — nothing to enforce
+    if (!limit || limit <= 0) return null;
 
     let outstanding = accountOutstanding(accountId);
     if (existing && existing.type === "Expense" && existing.account === accountId) {
@@ -152,7 +142,7 @@ export function TransactionForm({ onDone, existing, defaultType }) {
           Credit Card Payment — this will reduce {destinationAccount.name}'s outstanding balance.
         </p>
       )}
-      {error && <p className="type-secondary text-red-500">{error}</p>}
+      {error && <p className="type-secondary text-danger">{error}</p>}
       <PrimaryButton type="submit" className="w-full justify-center mt-2">{existing ? "Save Changes" : "Add Transaction"}</PrimaryButton>
     </form>
   );

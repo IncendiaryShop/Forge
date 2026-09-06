@@ -1,11 +1,5 @@
 import { theme } from "../styles/theme";
 
-// Same markup/classes/behavior as the password field already in AuthGate's
-// sign-in form — extracted here only so the new password-reset screen can
-// reuse the identical show/hide toggle without duplicating the SVGs twice
-// more. The existing sign-in password field in AuthGate.jsx is left exactly
-// as it was and does NOT use this component, per the "do not touch existing
-// password show/hide functionality" requirement.
 export function PasswordField({ label, id, value, onChange, autoComplete, show, onToggleShow, required = true }) {
   return (
     <label className="block mb-5" htmlFor={id}>
@@ -26,7 +20,7 @@ export function PasswordField({ label, id, value, onChange, autoComplete, show, 
             pr-12
             rounded-[12px]
             border
-            border-white/15
+            border-border-hover
             bg-black/30
             backdrop-blur-md
             text-[14px]
@@ -35,7 +29,7 @@ export function PasswordField({ label, id, value, onChange, autoComplete, show, 
             outline-none
             transition-all
             duration-300
-            focus:border-[#7C6CF3]/50
+            focus:border-accent/50
             focus:bg-black/40
             focus:shadow-[0_0_0_1px_rgba(124,108,243,0.18),0_0_15px_rgba(124,108,243,0.55),0_8px_35px_rgba(124,108,243,0.35)]
           "

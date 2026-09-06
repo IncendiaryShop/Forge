@@ -23,13 +23,6 @@ export function Modal({ title, onClose, children, wide }) {
     };
   }, [onClose]);
 
-  // Rendered through a portal into document.body — several pages nest
-  // their content inside an ancestor with `will-change: transform`
-  // (ScrollBounceBoundary's rubber-band wrapper), which creates a new
-  // containing block for `position: fixed` descendants and would
-  // otherwise size/center this overlay against that ancestor's box
-  // instead of the real viewport. Portaling escapes that entirely, the
-  // same reasoning <DatePicker /> already uses.
   return createPortal(
     <div
       className={`forge-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 ${theme.modalOverlay}`}

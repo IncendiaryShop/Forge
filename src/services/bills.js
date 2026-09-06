@@ -57,15 +57,6 @@ export async function deleteBill(id) {
   return { error };
 }
 
-// Marks a bill paid via the pay_bill() Postgres RPC (see supabase/schema.sql)
-// so the whole operation — ownership checks, active-cycle determination,
-// duplicate-payment check, transaction insert, and bill update — happens
-// atomically in one database transaction. If anything inside it fails, the
-// RPC raises and Postgres rolls back every statement in the function, so
-// there's no partial state to recover from client-side. `cycle` is no longer
-// passed in: the database determines/validates the active billing cycle
-// itself from `bill.due_day` and the payment date, so a stale client-side
-// cycle can never be used to fool the duplicate-payment check.
 export async function payBill(userId, bill, accountId, date) {
   const { data, error } = await call(
     supabase.rpc("pay_bill", { p_bill_id: bill.id, p_account_id: accountId, p_date: date }),
@@ -76,10 +67,6 @@ export async function payBill(userId, bill, accountId, date) {
   return { data: { bill: fromRow(row.bill_row), transaction: mapTransactionRow(row.transaction_row) }, error: null };
 }
 
-// Unpay has no atomicity requirement in this task's scope (only *paying* a
-// bill/invoice needed to become atomic) — kept as the existing two-step
-// client-side flow: delete the linked transaction (a no-op if a previous
-// partial failure already removed it), then clear the cycle.
 export async function unpayBill(bill) {
   if (bill.paidTransactionId) {
     const { error: delError } = await call(

@@ -1,4 +1,4 @@
-/* --------------------------------- helpers -------------------------------- */
+
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 export const todayISO = () => {
@@ -19,7 +19,7 @@ export function monthKey(dateStr) {
 }
 
 export function hashColorClasses(str) {
-  const arr = ["bg-accent/12 text-accent-hover", "bg-sky-500/15 text-sky-300", "bg-emerald-500/15 text-emerald-300", "bg-white/5 text-subtext", "bg-amber-500/15 text-amber-300", "bg-rose-500/15 text-rose-300", "bg-teal-500/15 text-teal-300", "bg-info/15 text-info"];
+  const arr = ["bg-accent/12 text-accent", "bg-white/10 text-subtext", "bg-success/15 text-success", "bg-white/5 text-subtext", "bg-warning/15 text-warning", "bg-danger/15 text-danger", "bg-white/[0.06] text-subtext", "bg-white/[0.08] text-subtext"];
   let h = 0;
   for (let i = 0; i < (str || "").length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
   return arr[Math.abs(h) % arr.length];

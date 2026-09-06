@@ -1,0 +1,203 @@
+
+
+.glass-card {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  background: rgba(255, 255, 255, 0.05);
+
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+
+  border: 1px solid rgba(255, 255, 255, 0.3);
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 10px 5px rgba(255, 255, 255, 0.5);
+}
+
+.glass-card::before {
+  content: "";
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+
+  pointer-events: none;
+}
+
+.glass-card::after {
+  content: "";
+
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 1px;
+  height: 100%;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.8),
+    transparent,
+    rgba(255, 255, 255, 0.3)
+  );
+
+  pointer-events: none;
+}
+
+.glass-card--active {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  background: rgba(255, 255, 255, 0.055);
+
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+
+  border-color: rgba(255, 255, 255, 0.16);
+
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 10px 2px rgba(255, 255, 255, 0.055);
+}
+
+.glass-card--active::before {
+  content: "";
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+
+  pointer-events: none;
+}
+
+.glass-card--active::after {
+  content: "";
+
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 1px;
+  height: 100%;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45),
+    transparent,
+    rgba(255, 255, 255, 0.12)
+  );
+
+  pointer-events: none;
+}
+
+.glass-card--hover {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+
+  border-color: rgba(255, 255, 255, 0.06);
+
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.glass-card--hover:hover {
+  background: rgba(255, 255, 255, 0.055);
+
+  border-color: rgba(255, 255, 255, 0.12);
+
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.glass-card--hover::before {
+  content: "";
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
+
+  pointer-events: none;
+
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.glass-card--hover:hover::before {
+  opacity: 1;
+}
+
+.glass-card--hover::after {
+  content: "";
+
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 1px;
+  height: 100%;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.25),
+    transparent,
+    rgba(255, 255, 255, 0.08)
+  );
+
+  pointer-events: none;
+
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.glass-card--hover:hover::after {
+  opacity: 1;
+}

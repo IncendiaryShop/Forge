@@ -1,15 +1,5 @@
--- ============================================================================
--- FORGE — Supabase schema
--- Run this once against a fresh Supabase project (SQL editor, or `supabase db push`).
--- Idempotent: safe to re-run (uses IF NOT EXISTS / CREATE OR REPLACE / drop-then-create
--- for policies/constraints).
--- ============================================================================
+create extension if not exists "pgcrypto";
 
-create extension if not exists "pgcrypto"; -- gen_random_uuid()
-
--- ----------------------------------------------------------------------------
--- profiles
--- ----------------------------------------------------------------------------
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   display_name text,
@@ -18,19 +8,6 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
--- ----------------------------------------------------------------------------
--- accounts
--- `unique (id, user_id)` looks redundant next to the primary key, but it's
--- what lets every other user-owned table below reference accounts with a
--- COMPOSITE foreign key (some_id, user_id) -> accounts(id, user_id) instead of
--- just (some_id) -> accounts(id). A plain single-column FK only proves the
--- referenced account exists *somewhere* — not that it belongs to the same
--- user as the referencing row. The composite form makes "user B's
--- transaction points at user A's account" impossible to insert at all,
--- regardless of what the frontend sends or whether RLS is somehow
--- misconfigured. Same pattern is repeated on bills/invoices/transactions
--- below for the same reason.
--- ----------------------------------------------------------------------------
 create table if not exists public.accounts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -38,22 +15,12 @@ create table if not exists public.accounts (
   type text not null,
   provider text,
   opening numeric(14, 2) not null default 0,
-  -- Credit Card accounts only. `opening` above doubles as the opening
-  -- OUTSTANDING for a Credit Card (not a credit limit). Nullable: absent for
-  -- every non-Credit-Card account, and for any Credit Card row created
-  -- before this column existed — the frontend treats a null limit as "no
-  -- limit set yet" rather than a hard 0 cap.
+
   credit_limit numeric(14, 2),
-  -- Credit Card billing cycle (Phase 7). Day-of-month settings (1-31), same
-  -- convention as bills.due_day — nullable, absent for non-Credit-Card
-  -- accounts and for any card that hasn't configured them yet.
+
   statement_date int check (statement_date is null or statement_date between 1 and 31),
   payment_due_date int check (payment_due_date is null or payment_due_date between 1 and 31),
-  -- Loan accounts only (Phase 9). `opening` above doubles as the ORIGINAL
-  -- PRINCIPAL for a Loan (same reuse pattern as Credit Card's opening
-  -- outstanding) — Outstanding Principal is never stored, only derived (see
-  -- loanOutstandingPrincipal() in App.jsx). Nullable: absent for every
-  -- non-Loan account.
+
   loan_interest_rate numeric(6, 3) check (loan_interest_rate is null or loan_interest_rate >= 0),
   loan_tenure_months int check (loan_tenure_months is null or loan_tenure_months > 0),
   loan_emi_amount numeric(14, 2) check (loan_emi_amount is null or loan_emi_amount > 0),
@@ -65,13 +32,6 @@ create table if not exists public.accounts (
 );
 create index if not exists accounts_user_id_idx on public.accounts (user_id);
 
--- ----------------------------------------------------------------------------
--- bills
--- account_id / paid_transaction_id are both ownership-checked via composite
--- FKs (account_id, user_id) and (paid_transaction_id, user_id) respectively —
--- the latter is added via ALTER TABLE further down once transactions exists
--- (bills <-> transactions is a two-way reference).
--- ----------------------------------------------------------------------------
 create table if not exists public.bills (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -91,10 +51,6 @@ create table if not exists public.bills (
 );
 create index if not exists bills_user_id_idx on public.bills (user_id);
 
--- ----------------------------------------------------------------------------
--- invoices
--- transaction_id composite FK added below once transactions exists.
--- ----------------------------------------------------------------------------
 create table if not exists public.invoices (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -113,15 +69,6 @@ create table if not exists public.invoices (
 );
 create index if not exists invoices_user_id_idx on public.invoices (user_id);
 
--- ----------------------------------------------------------------------------
--- transactions
--- account_id / transfer_account_id / bill_id / invoice_id are all composite
--- FKs against (id, user_id) on their respective tables — same cross-user
--- protection as above, applied to every relationship this table holds.
--- account_id / transfer_account_id use ON DELETE RESTRICT (an account with
--- transactions against it can't be deleted — matches the existing
--- client-side guard in AccountsPage, now also enforced in the database).
--- ----------------------------------------------------------------------------
 create table if not exists public.transactions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -153,8 +100,6 @@ create index if not exists transactions_account_id_idx on public.transactions (a
 create index if not exists transactions_bill_id_idx on public.transactions (bill_id);
 create index if not exists transactions_invoice_id_idx on public.transactions (invoice_id);
 
--- Now that transactions (and its (id, user_id) uniqueness) exists, wire up
--- the two forward references, both ownership-checked composite FKs.
 alter table public.bills
   drop constraint if exists bills_paid_transaction_id_fkey,
   add constraint bills_paid_transaction_id_fkey
@@ -165,9 +110,6 @@ alter table public.invoices
   add constraint invoices_transaction_id_fkey
     foreign key (transaction_id, user_id) references public.transactions (id, user_id) on delete set null;
 
--- ----------------------------------------------------------------------------
--- budgets
--- ----------------------------------------------------------------------------
 create table if not exists public.budgets (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -179,9 +121,6 @@ create table if not exists public.budgets (
 );
 create index if not exists budgets_user_id_idx on public.budgets (user_id);
 
--- ----------------------------------------------------------------------------
--- goals
--- ----------------------------------------------------------------------------
 create table if not exists public.goals (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -194,9 +133,6 @@ create table if not exists public.goals (
 );
 create index if not exists goals_user_id_idx on public.goals (user_id);
 
--- ============================================================================
--- updated_at auto-touch trigger
--- ============================================================================
 create or replace function public.set_updated_at()
 returns trigger as $$
 begin
@@ -215,9 +151,6 @@ begin
   end loop;
 end $$;
 
--- ============================================================================
--- Row Level Security
--- ============================================================================
 alter table public.profiles enable row level security;
 alter table public.accounts enable row level security;
 alter table public.transactions enable row level security;
@@ -252,9 +185,6 @@ begin
   end loop;
 end $$;
 
--- ============================================================================
--- Realtime
--- ============================================================================
 do $$
 begin
   if not exists (
@@ -269,9 +199,6 @@ exception when undefined_object then
     public.accounts, public.transactions, public.bills, public.invoices, public.budgets, public.goals;
 end $$;
 
--- ============================================================================
--- Auto-create a profile row on signup
--- ============================================================================
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
@@ -285,19 +212,10 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Repair profile rows for auth users that already existed when public data was
--- cleared or recreated. This is safe to run repeatedly.
 insert into public.profiles (id)
 select id from auth.users
 on conflict (id) do nothing;
 
--- ============================================================================
--- increment_goal — atomic contribution.
--- SECURITY INVOKER (the default), so the UPDATE runs as the calling user and
--- is subject to the normal goals_update_own RLS policy — avoids a stale-read
--- race where two devices contributing near-simultaneously would otherwise
--- both read the old `current` value and overwrite each other.
--- ============================================================================
 create or replace function public.increment_goal(p_goal_id uuid, p_amount numeric)
 returns public.goals as $$
   update public.goals
@@ -306,15 +224,6 @@ returns public.goals as $$
   returning *;
 $$ language sql;
 
--- ============================================================================
--- compute_active_billing_cycle — server-side mirror of the frontend's
--- getActiveBillingCycle() (src/utils/billCycle.js). Kept byte-for-byte
--- equivalent to that logic on purpose: same "clamp due_day to the last day of
--- the month" rule, same "roll into next month's cycle once within 5 days of
--- it" rule, same "YYYY-MM" cycle key. This is what lets pay_bill() below
--- determine/validate the active cycle itself rather than trusting a
--- client-supplied value.
--- ============================================================================
 create or replace function public.compute_active_billing_cycle(p_due_day int, p_today date)
 returns text
 language plpgsql
@@ -352,18 +261,6 @@ begin
 end;
 $$;
 
--- ============================================================================
--- pay_bill — atomic bill payment.
--- A single RPC call is one Postgres transaction: if any RAISE EXCEPTION fires
--- partway through, every statement before it in this function is rolled back
--- automatically (the transaction insert AND the bill update never partially
--- apply). SECURITY INVOKER (default — no SECURITY DEFINER) so every
--- statement still runs under RLS as the calling user; auth.uid() is read
--- server-side and never trusts a client-supplied user id. `select ... for
--- update` locks the bill row for the duration of the call, so two concurrent
--- pay requests for the same bill/cycle serialize instead of racing — the
--- second one hits the "already paid" check and fails cleanly.
--- ============================================================================
 create or replace function public.pay_bill(p_bill_id uuid, p_account_id uuid, p_date date default current_date)
 returns table (bill_row public.bills, transaction_row public.transactions)
 language plpgsql
@@ -414,10 +311,6 @@ $$;
 revoke all on function public.pay_bill(uuid, uuid, date) from public;
 grant execute on function public.pay_bill(uuid, uuid, date) to authenticated;
 
--- ============================================================================
--- pay_invoice — atomic invoice payment. Same transaction/locking/ownership
--- reasoning as pay_bill above.
--- ============================================================================
 create or replace function public.pay_invoice(p_invoice_id uuid, p_account_id uuid, p_date date default current_date)
 returns table (invoice_row public.invoices, transaction_row public.transactions)
 language plpgsql
@@ -465,31 +358,6 @@ $$;
 revoke all on function public.pay_invoice(uuid, uuid, date) from public;
 grant execute on function public.pay_invoice(uuid, uuid, date) to authenticated;
 
--- ============================================================================
--- Phase 2 — Credit Card EMI Foundation (emi_plans, emi_installments, and the
--- create_emi_plan()/pay_emi_installment() RPCs). Appended so a fresh install
--- of this file alone is sufficient; see supabase/migrations/0003_credit_card_emi.sql
--- for applying this to an already-provisioned project.
--- ============================================================================
-
--- ============================================================================
--- Phase 2 — Credit Card EMI Foundation.
--- Adds emi_plans + emi_installments, plus the create_emi_plan() and
--- pay_emi_installment() RPCs that operate on them atomically (same pattern
--- as pay_bill()/pay_invoice() in schema.sql). Run once against an existing
--- project (SQL editor, or `supabase db push`). Idempotent: safe to re-run.
--- ============================================================================
-
--- ----------------------------------------------------------------------------
--- emi_plans
--- Linked to the ORIGINAL purchase transaction (transaction_id) — that
--- transaction is never modified by this feature; converting it to EMI only
--- ever attaches a plan to it. `unique (transaction_id, user_id)` is what
--- enforces "a transaction can only be converted to EMI once" at the database
--- level (mirrored by an application-level check in create_emi_plan() too, so
--- the user sees a friendly error instead of a raw constraint violation in the
--- common case).
--- ----------------------------------------------------------------------------
 create table if not exists public.emi_plans (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -514,16 +382,6 @@ create index if not exists emi_plans_user_id_idx on public.emi_plans (user_id);
 create index if not exists emi_plans_transaction_id_idx on public.emi_plans (transaction_id);
 create index if not exists emi_plans_account_id_idx on public.emi_plans (account_id);
 
--- ----------------------------------------------------------------------------
--- emi_installments
--- payment_transaction_id points at the Transfer transaction created when an
--- installment is actually paid (see pay_emi_installment() below) — that
--- Transfer is what reduces the card's outstanding, exactly like any other
--- Credit Card payment. ON DELETE CASCADE from emi_plans means deleting a plan
--- can never leave an orphaned installment row; ON DELETE SET NULL from
--- transactions means deleting a payment transaction un-links it from its
--- installment rather than deleting installment history.
--- ----------------------------------------------------------------------------
 create table if not exists public.emi_installments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -534,11 +392,7 @@ create table if not exists public.emi_installments (
   status text not null default 'Upcoming' check (status in ('Upcoming', 'Paid')),
   paid_date date,
   payment_transaction_id uuid,
-  -- Explicit marker: true only for installments settled as part of a
-  -- preclose_emi_plan() batch (which share ONE payment_transaction_id across
-  -- multiple installments) — lets the frontend refuse "Undo" on these rows,
-  -- since undoing one would incorrectly reverse the whole shared settlement.
-  -- Ordinary pay_emi_installment() payments never set this.
+
   settled_via_preclosure boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -551,10 +405,6 @@ create index if not exists emi_installments_user_id_idx on public.emi_installmen
 create index if not exists emi_installments_plan_id_idx on public.emi_installments (emi_plan_id);
 create index if not exists emi_installments_due_date_idx on public.emi_installments (due_date);
 
--- ============================================================================
--- updated_at auto-touch trigger — extend the existing trigger to the two new
--- tables (same function as every other table, defined earlier in schema.sql).
--- ============================================================================
 do $$
 declare t text;
 begin
@@ -565,10 +415,6 @@ begin
   end loop;
 end $$;
 
--- ============================================================================
--- Row Level Security — same ownership pattern as every other user-owned
--- table (select/insert/update/delete restricted to auth.uid() = user_id).
--- ============================================================================
 alter table public.emi_plans enable row level security;
 alter table public.emi_installments enable row level security;
 
@@ -591,9 +437,6 @@ begin
   end loop;
 end $$;
 
--- ============================================================================
--- Realtime — add the two new tables to the existing publication.
--- ============================================================================
 do $$
 begin
   if not exists (
@@ -606,24 +449,6 @@ exception when undefined_object then
   create publication supabase_realtime for table public.emi_plans, public.emi_installments;
 end $$;
 
--- ============================================================================
--- create_emi_plan — atomic EMI conversion.
--- Validates the transaction is an Expense owned by the caller, that the
--- given account matches the transaction's account AND is a Credit Card, and
--- that the transaction hasn't already been converted — then inserts the plan
--- and generates its installment schedule in the same transaction. The
--- ORIGINAL transaction row is never touched (no update statement against
--- public.transactions anywhere in this function), so its amount/date/
--- category/account stay exactly as they were — satisfying "do not modify the
--- original transaction" and "credit card outstanding must not change on
--- conversion" simultaneously, since outstanding is derived from transactions
--- as-is.
---
--- EMI math (amount/interest/total) is computed client-side and passed in
--- rather than recomputed here, so the schedule always matches exactly what
--- the user saw in the conversion modal. The last installment absorbs any
--- rounding remainder so the schedule always sums to exactly p_total_payable.
--- ============================================================================
 create or replace function public.create_emi_plan(
   p_transaction_id uuid,
   p_account_id uuid,
@@ -728,21 +553,6 @@ $$;
 revoke all on function public.create_emi_plan(uuid, uuid, numeric, numeric, int, numeric, numeric, numeric, date) from public;
 grant execute on function public.create_emi_plan(uuid, uuid, numeric, numeric, int, numeric, numeric, numeric, date) to authenticated;
 
--- ============================================================================
--- pay_emi_installment — atomic EMI installment payment.
--- Records the payment as a Transfer FROM p_source_account_id TO the EMI
--- plan's Credit Card account — the exact same mechanism as any other
--- Credit Card payment (see App.jsx's accountOutstanding()), so paying an
--- installment reduces the card's outstanding automatically, with no
--- separate "EMI payment" balance logic required. Marks the installment Paid,
--- and flips the plan to 'Completed' once every installment is paid.
---
--- Phase 6 hardening: also enforces the Phase 3 Bank/Cash insufficient-funds
--- rule and the Phase 4 "payment can't exceed outstanding" rule SERVER-SIDE
--- (mirroring accountBalance()/accountOutstanding() in App.jsx exactly),
--- and requires the EMI plan to be 'Active' — so this RPC no longer blindly
--- trusts the frontend's own checks for correctness/security.
--- ============================================================================
 create or replace function public.pay_emi_installment(
   p_installment_id uuid,
   p_source_account_id uuid,
@@ -797,10 +607,6 @@ begin
     raise exception 'Credit Card account not found or not owned by the current user';
   end if;
 
-  -- Phase 3: Bank/Cash insufficient-funds check — mirrors accountBalance()
-  -- in App.jsx exactly (Income +, Expense -, Transfer-out -, Transfer-in +),
-  -- applied only when the source isn't itself a Credit Card (Credit Cards
-  -- never use this rule — they use their own outstanding/limit logic).
   if v_source.type <> 'Credit Card' then
     select coalesce(v_source.opening, 0)
       + coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = p_source_account_id), 0)
@@ -816,8 +622,6 @@ begin
     end if;
   end if;
 
-  -- Phase 4: Credit Card outstanding check — mirrors accountOutstanding() in
-  -- App.jsx exactly. A payment can never exceed what's actually owed.
   select coalesce(v_card.opening, 0)
     + coalesce(sum(t.amount) filter (where t.type = 'Expense' and t.account_id = v_plan.account_id), 0)
     - coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = v_plan.account_id), 0)
@@ -855,22 +659,6 @@ $$;
 revoke all on function public.pay_emi_installment(uuid, uuid, date, text) from public;
 grant execute on function public.pay_emi_installment(uuid, uuid, date, text) to authenticated;
 
--- ============================================================================
--- Phase 7 — Credit Card Statement & Billing Cycle (credit_card_statements +
--- generate_statement()). Appended so a fresh install of this file alone is
--- sufficient; see supabase/migrations/0005_credit_card_billing_cycle.sql for
--- applying this to an already-provisioned project. accounts.statement_date /
--- payment_due_date are already part of the accounts table definition above.
--- ============================================================================
-
--- ----------------------------------------------------------------------------
--- credit_card_statements
--- One row per (account, billing cycle). `cycle_key` is 'YYYY-MM' identifying
--- which cycle the statement covers (matches the frontend's cycleKey() in
--- utils/creditCardBilling.js) — `unique (account_id, cycle_key)` is what
--- makes "generate a statement for a cycle that already has one" a clean,
--- friendly rejection instead of a silent duplicate.
--- ----------------------------------------------------------------------------
 create table if not exists public.credit_card_statements (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -910,19 +698,6 @@ exception when undefined_object then
   create publication supabase_realtime for table public.credit_card_statements;
 end $$;
 
--- ============================================================================
--- generate_statement — freezes the Credit Card's CURRENT Outstanding into a
--- statement row for its current billing cycle. Does not touch accounts,
--- transactions, or Outstanding in any way — this is a billing/accounting
--- record only, never a transaction (matches Phase 7's "do not automatically
--- create duplicate transactions just because a statement is generated").
---
--- Outstanding is computed with the exact same formula as
--- accountOutstanding() in App.jsx / pay_emi_installment's Phase 6 hardening,
--- so this is the third place that formula now lives (JS, pay_emi_installment,
--- and here) — all three are required to independently verify the same fact
--- at their own layer, same reasoning as Phase 6.
--- ============================================================================
 create or replace function public.generate_statement(
   p_account_id uuid,
   p_cycle_key text,
@@ -974,26 +749,6 @@ $$;
 
 revoke all on function public.generate_statement(uuid, text, date, date) from public;
 grant execute on function public.generate_statement(uuid, text, date, date) to authenticated;
-
--- ============================================================================
--- preclose_emi_plan — settles every remaining (not-yet-Paid) installment on
--- an Active EMI plan in a single Transfer transaction, same mechanism as
--- pay_emi_installment() (Source Bank/Cash -> Credit Card), then marks the
--- plan 'Preclosed' — a distinct terminal status from 'Completed' (reached by
--- paying every installment individually) and from 'Cancelled' (an abandoned
--- EMI), so a pre-closed plan stays clearly distinguishable in history.
---
--- Settled installments are flagged settled_via_preclosure = true, since they
--- share ONE payment_transaction_id across potentially many rows — the
--- frontend uses that flag to refuse "Undo" on them (undoing one would
--- incorrectly reverse the whole shared settlement and corrupt the others).
--- Ordinary pay_emi_installment() payments never set it, so their Undo keeps
--- working exactly as before.
---
--- Applies the exact same Phase 3 (Bank/Cash insufficient-funds) and Phase 4
--- (payment can't exceed Credit Card outstanding) server-side checks as
--- pay_emi_installment's Phase 6 hardening, computed identically.
--- ============================================================================
 
 create or replace function public.preclose_emi_plan(
   p_plan_id uuid,
@@ -1049,8 +804,6 @@ begin
     raise exception 'Credit Card account not found or not owned by the current user';
   end if;
 
-  -- Phase 3: Bank/Cash insufficient-funds check — identical formula to
-  -- pay_emi_installment()'s hardening / accountBalance() in App.jsx.
   if v_source.type <> 'Credit Card' then
     select coalesce(v_source.opening, 0)
       + coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = p_source_account_id), 0)
@@ -1066,8 +819,6 @@ begin
     end if;
   end if;
 
-  -- Phase 4: Credit Card outstanding check — identical formula to
-  -- pay_emi_installment()'s hardening / accountOutstanding() in App.jsx.
   select coalesce(v_card.opening, 0)
     + coalesce(sum(t.amount) filter (where t.type = 'Expense' and t.account_id = v_plan.account_id), 0)
     - coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = v_plan.account_id), 0)
@@ -1088,14 +839,6 @@ begin
   values (v_user_id, p_date, 'Transfer', 'EMI', coalesce(p_description, 'EMI pre-closure'), p_source_account_id, v_plan.account_id, v_remaining_amount)
   returning * into v_txn;
 
-  -- Only rows that weren't already Paid are touched — a previously-paid
-  -- installment's status/paid_date/payment_transaction_id is left exactly as
-  -- it was, so paid history never gets rewritten or double-counted.
-  -- settled_via_preclosure = true is the explicit marker the frontend uses
-  -- to refuse "Undo" on these rows (they share one transaction; undoing any
-  -- one of them would incorrectly reverse the whole settlement and corrupt
-  -- the others) — ordinary pay_emi_installment() payments never set this
-  -- flag, so their Undo continues to work exactly as before.
   update public.emi_installments
   set status = 'Paid', paid_date = p_date, payment_transaction_id = v_txn.id, settled_via_preclosure = true
   where emi_plan_id = v_plan.id and user_id = v_user_id and status <> 'Paid';
@@ -1114,24 +857,6 @@ $$;
 revoke all on function public.preclose_emi_plan(uuid, uuid, date, text) from public;
 grant execute on function public.preclose_emi_plan(uuid, uuid, date, text) to authenticated;
 
--- ============================================================================
--- Phase 9 — Loan Account + Loan Schedule + Normal Loan EMI (loan_installments +
--- disburse_loan() + pay_loan_installment()). Appended so a fresh install of
--- this file alone is sufficient; see
--- supabase/migrations/0008_loan_accounts.sql for applying this to an
--- already-provisioned project. accounts.loan_* columns are already part of
--- the accounts table definition above.
--- ============================================================================
-
--- ----------------------------------------------------------------------------
--- loan_installments
--- One row per amortization-schedule entry for a Loan account. Deliberately a
--- SEPARATE table from emi_installments (Credit Card EMI, Phase 2) — Loan and
--- Credit Card EMI are different liabilities with different accounting
--- (principal/interest split here vs a single blended amount there), and
--- coupling them into one table/RPC would conflate two systems the brief
--- explicitly requires stay separate.
--- ----------------------------------------------------------------------------
 create table if not exists public.loan_installments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -1186,25 +911,6 @@ exception when undefined_object then
   create publication supabase_realtime for table public.loan_installments;
 end $$;
 
--- ============================================================================
--- disburse_loan — atomic loan disbursement + schedule generation.
---
--- Records disbursement as a Transfer FROM the loan account TO the receiving
--- Bank/Cash account (loan.opening = original principal moves out of the
--- loan "account" conceptually and into the bank) — this is what correctly
--- increases the bank's balance via the EXISTING, unmodified accountBalance()
--- Transfer branch, with NO new transaction type and NO Income created. The
--- loan account's own generic accountBalance()/accountOutstanding() values are
--- never read/displayed anywhere in the UI for a Loan — Outstanding Principal
--- is derived separately (see accounts.js / App.jsx loanOutstandingPrincipal),
--- so this Transfer's effect on the loan "account" itself is inert.
---
--- The amortization schedule itself is computed client-side (utils/
--- loanAmortization.js, same "trust client math, validate the total"
--- precedent as create_emi_plan for Credit Card EMI) and passed in as jsonb;
--- this function only validates it sums to the account's principal before
--- committing, then bulk-inserts it.
--- ============================================================================
 create or replace function public.disburse_loan(
   p_account_id uuid,
   p_destination_account_id uuid,
@@ -1295,26 +1001,6 @@ $$;
 revoke all on function public.disburse_loan(uuid, uuid, date, jsonb, text) from public;
 grant execute on function public.disburse_loan(uuid, uuid, date, jsonb, text) to authenticated;
 
--- ============================================================================
--- pay_loan_installment — atomic normal loan EMI payment.
---
--- Splits the EMI into its two accounting effects, both via ordinary
--- transactions (never a direct balance mutation):
---   - interest_component (if > 0) -> an Expense on the source account
---     (category 'Loan Interest') — real spending, shows up in Dashboard/
---     budget/category totals exactly like any other Expense.
---   - principal_component -> a Transfer from the source account to the loan
---     account — reduces the source's balance and (via the loan's derived
---     Outstanding Principal formula) reduces what's owed, without ever
---     touching Credit Card outstanding/limit logic.
--- Together they debit the source by exactly emi_amount, matching Forge's
--- "derive everything from transactions" architecture with no new concepts.
---
--- Applies the same Phase 3-style Bank/Cash insufficient-funds check as
--- pay_emi_installment()/preclose_emi_plan() (Phase 6 precedent), computed
--- identically, and completes the loan (loan_status = 'Completed') once no
--- Upcoming installments remain.
--- ============================================================================
 create or replace function public.pay_loan_installment(
   p_installment_id uuid,
   p_source_account_id uuid,
@@ -1369,8 +1055,6 @@ begin
     raise exception 'Loan EMIs can only be paid from a Bank or Cash account';
   end if;
 
-  -- Phase 3: Bank/Cash insufficient-funds check — identical formula to
-  -- accountBalance() in App.jsx / pay_emi_installment's Phase 6 hardening.
   select coalesce(v_source.opening, 0)
     + coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = p_source_account_id), 0)
     - coalesce(sum(t.amount) filter (where t.type = 'Expense' and t.account_id = p_source_account_id), 0)
@@ -1416,14 +1100,6 @@ $$;
 revoke all on function public.pay_loan_installment(uuid, uuid, date, text) from public;
 grant execute on function public.pay_loan_installment(uuid, uuid, date, text) to authenticated;
 
--- ============================================================================
--- Phase 10 — Loan Prepayment / Foreclosure (preclose_loan()). Appended so a
--- fresh install of this file alone is sufficient; see
--- supabase/migrations/0009_loan_preclosure.sql for applying this to an
--- already-provisioned project. The Preclosed status values are already part
--- of the accounts.loan_status / loan_installments.status constraints above.
--- ============================================================================
-
 create or replace function public.preclose_loan(
   p_account_id uuid,
   p_source_account_id uuid,
@@ -1458,9 +1134,6 @@ begin
     raise exception 'This loan is not active and cannot be pre-closed';
   end if;
 
-  -- Outstanding Principal — identical formula to loanOutstandingPrincipal()
-  -- in App.jsx: opening (original principal) minus every principal-component
-  -- Transfer already recorded against this loan.
   select coalesce(v_loan.opening, 0)
     - coalesce(sum(t.amount) filter (where t.type = 'Transfer' and t.transfer_account_id = p_account_id), 0)
     into v_outstanding
@@ -1482,8 +1155,6 @@ begin
     raise exception 'A loan can only be pre-closed from a Bank or Cash account';
   end if;
 
-  -- Phase 3: Bank/Cash insufficient-funds check — identical formula to
-  -- accountBalance() in App.jsx / pay_loan_installment's own hardening.
   if v_source.type <> 'Credit Card' then
     select coalesce(v_source.opening, 0)
       + coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = p_source_account_id), 0)
@@ -1503,8 +1174,6 @@ begin
   values (v_user_id, p_date, 'Transfer', 'Loan Preclosure', coalesce(p_description, 'Loan pre-closure'), p_source_account_id, p_account_id, v_outstanding)
   returning * into v_txn;
 
-  -- Only remaining Upcoming rows are touched — Paid installments (and their
-  -- own principal/interest transactions) are left exactly as they were.
   update public.loan_installments
   set status = 'Preclosed', paid_date = p_date, principal_transaction_id = v_txn.id
   where account_id = p_account_id and user_id = v_user_id and status = 'Upcoming';
@@ -1523,45 +1192,8 @@ $$;
 revoke all on function public.preclose_loan(uuid, uuid, date, text) from public;
 grant execute on function public.preclose_loan(uuid, uuid, date, text) to authenticated;
 
--- ============================================================================
--- Phase 11 — Manual EMI Plans (register an already-existing Credit Card EMI
--- without a source purchase transaction).
---
--- Every existing EMI plan is created via create_emi_plan(), which converts a
--- real Expense transaction into a plan — emi_plans.transaction_id is a
--- required FK to that transaction, and the plan's displayed "name" in the UI
--- is simply the original transaction's description/category (see
--- EmiSchedule.jsx / BillsPage.jsx). That path is completely untouched by
--- this migration.
---
--- This adds a second, separate creation path for an EMI the user already
--- has on their card — set up before they started using Forge, or from a
--- purchase Forge never recorded as a transaction. There is deliberately NO
--- purchase transaction for these, so:
---   - transaction_id is made nullable (it's still required, and still FK'd,
---     for every ordinary converted plan)
---   - a `source` column ('converted' | 'manual') distinguishes the two, and
---     a check constraint keeps them consistent with transaction_id
---   - a `name` column is added so a manual plan (which has no originating
---     transaction to borrow a label from) can be given its own, e.g.
---     "HDFC EMI 1" — required only when source = 'manual'
---
--- Manually registering an EMI never inserts into public.transactions, so
--- Credit Card outstanding (accountOutstanding() in App.jsx, derived purely
--- from transactions) is completely unaffected — the entire point of this
--- feature is that the EMI is already reflected in the card's outstanding,
--- and registering it here must not double-count it.
---
--- Idempotent: safe to re-run.
--- ============================================================================
-
--- 1) transaction_id is no longer required at the column level — still
--- required (and FK'd, and unique per user) for 'converted' plans via the
--- check constraint below, just no longer a blanket NOT NULL.
 alter table public.emi_plans alter column transaction_id drop not null;
 
--- 2) New columns. `source` defaults every existing row to 'converted' (the
--- only kind that existed before this migration) — no backfill needed.
 alter table public.emi_plans add column if not exists name text;
 alter table public.emi_plans add column if not exists source text not null default 'converted';
 
@@ -1569,10 +1201,6 @@ alter table public.emi_plans
   drop constraint if exists emi_plans_source_check,
   add constraint emi_plans_source_check check (source in ('manual', 'converted'));
 
--- A converted plan must keep its transaction link; a manual plan must never
--- have one (there's nothing to link to) — makes "manual plan with a
--- transaction_id" or "converted plan without one" impossible to insert,
--- regardless of what the frontend sends.
 alter table public.emi_plans
   drop constraint if exists emi_plans_source_transaction_consistency,
   add constraint emi_plans_source_transaction_consistency check (
@@ -1580,41 +1208,12 @@ alter table public.emi_plans
     (source = 'manual' and transaction_id is null)
   );
 
--- A manual plan has no transaction to borrow a display label from, so it
--- must supply its own non-blank name. Converted plans are unaffected
--- (name stays optional/unused for them — the UI still prefers the original
--- transaction's description/category).
 alter table public.emi_plans
   drop constraint if exists emi_plans_manual_requires_name,
   add constraint emi_plans_manual_requires_name check (
     source <> 'manual' or (name is not null and btrim(name) <> '')
   );
 
--- ============================================================================
--- create_manual_emi_plan — atomic manual EMI registration.
---
--- Same atomicity/validation shape as create_emi_plan() (Phase 2) — inserts
--- the plan and generates its full remaining installment schedule in one
--- database transaction — but with no source transaction: only the account
--- (must be owned by the caller and a Credit Card) is validated, since
--- there's no purchase transaction to check the account against.
---
--- Unlike create_emi_plan (where the schedule's first installment falls one
--- month after the given start_date, because that date is the conversion/
--- purchase date), p_first_due_date here IS the first installment's own due
--- date — exactly what the "First Due Date" field on the form means. It's
--- stored in emi_plans.start_date, same column create_emi_plan uses, just
--- interpreted as "installment 1's due date" instead of "purchase date" for
--- this source — that column is never displayed directly in the UI, only
--- used to derive the schedule, so the two interpretations never collide.
---
--- EMI math (totalInterest/totalPayable) is computed client-side from the
--- user-entered Outstanding Principal / Monthly EMI / Remaining Tenure (see
--- utils/emi.js's computeManualEmiTotals) and passed straight through, same
--- as create_emi_plan does for the conversion flow. The last installment
--- absorbs any rounding remainder so the schedule always sums to exactly
--- p_total_payable.
--- ============================================================================
 create or replace function public.create_manual_emi_plan(
   p_account_id uuid,
   p_name text,
@@ -1690,9 +1289,6 @@ begin
       v_remaining := v_remaining - p_emi_amount;
     end if;
 
-    -- i - 1: the FIRST installment (i = 1) falls exactly on p_first_due_date,
-    -- not one month after it (that's the difference from create_emi_plan's
-    -- own `make_interval(months => i)`, explained above).
     insert into public.emi_installments (user_id, emi_plan_id, installment_number, due_date, amount, status)
     values (v_user_id, v_plan.id, i, (p_first_due_date + make_interval(months => i - 1))::date, v_amt, 'Upcoming');
   end loop;
@@ -1708,3 +1304,88 @@ $$;
 
 revoke all on function public.create_manual_emi_plan(uuid, text, numeric, numeric, int, numeric, numeric, numeric, date) from public;
 grant execute on function public.create_manual_emi_plan(uuid, text, numeric, numeric, int, numeric, numeric, numeric, date) to authenticated;
+
+alter table public.invoices
+  add column if not exists kind text not null default 'manual',
+  add column if not exists due_date date,
+  add column if not exists payment_terms text,
+  add column if not exists currency text not null default 'INR',
+  add column if not exists seller jsonb,
+  add column if not exists bill_to jsonb,
+  add column if not exists items jsonb not null default '[]'::jsonb,
+  add column if not exists discount numeric not null default 0,
+  add column if not exists tax_rate numeric not null default 0,
+  add column if not exists notes text,
+  add column if not exists payment_info jsonb,
+  add column if not exists pdf_path text,
+  add column if not exists pdf_generated_at timestamptz,
+  add column if not exists needs_regeneration boolean not null default false;
+
+alter table public.invoices
+  drop constraint if exists invoices_kind_check;
+alter table public.invoices
+  add constraint invoices_kind_check check (kind in ('manual', 'generated'));
+
+insert into storage.buckets (id, name, public)
+values ('invoice-files', 'invoice-files', false)
+on conflict (id) do nothing;
+
+drop policy if exists "invoice-files own read" on storage.objects;
+create policy "invoice-files own read" on storage.objects
+  for select using (
+    bucket_id = 'invoice-files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "invoice-files own write" on storage.objects;
+create policy "invoice-files own write" on storage.objects
+  for insert with check (
+    bucket_id = 'invoice-files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "invoice-files own update" on storage.objects;
+create policy "invoice-files own update" on storage.objects
+  for update using (
+    bucket_id = 'invoice-files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "invoice-files own delete" on storage.objects;
+create policy "invoice-files own delete" on storage.objects
+  for delete using (
+    bucket_id = 'invoice-files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create table if not exists public.clients (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  name text not null,
+  contact text,
+  address text,
+  city text,
+  state text,
+  postal_code text,
+  country text,
+  email text,
+  phone text,
+  tax text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (id, user_id)
+);
+create index if not exists clients_user_id_idx on public.clients (user_id);
+
+alter table public.clients enable row level security;
+
+drop policy if exists clients_select_own on public.clients;
+create policy clients_select_own on public.clients for select using (auth.uid() = user_id);
+drop policy if exists clients_insert_own on public.clients;
+create policy clients_insert_own on public.clients for insert with check (auth.uid() = user_id);
+drop policy if exists clients_update_own on public.clients;
+create policy clients_update_own on public.clients for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists clients_delete_own on public.clients;
+create policy clients_delete_own on public.clients for delete using (auth.uid() = user_id);
+
+grant select, insert, update, delete on public.clients to authenticated;

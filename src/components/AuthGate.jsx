@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthCtx";
 import MoltenMetal from "./MoltenMetal";
 import forgeLogo from "../assets/forge_logo.svg";
 
-export function AuthGate() {
+export function AuthGate({ onExploreDemo }) {
   const { signUp, signIn } = useAuth();
 
   const [mode, setMode] = useState("signin");
@@ -64,16 +64,15 @@ export function AuthGate() {
   return (
     <div className="relative min-h-screen overflow-hidden flex items-center justify-center px-6 py-10 bg-black">
 
-      {/* Molten Metal Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <MoltenMetal
-          color1="#1c1c1c"
-          color2="#7C6CF3"
+          color1="#0a0a0a"
+          color2="#9f9fa9"
           color3="#FFFFFF"
           speed={0.2}
-          scale={3.6}
+          scale={2.4}
           detail={5}
-          glow={1.7}
+          glow={1.8}
           coreSize={0.11}
           swirl={1}
           fold={-0.2}
@@ -81,23 +80,20 @@ export function AuthGate() {
           brightness={1}
           colorMode="molten"
           grain
-          grainIntensity={0.05}
+          grainIntensity={0.02}
           opacity={1}
         />
       </div>
 
-      {/* Glass Authentication Card */}
       {(mode === "signin" || mode === "signup") && (
+      <div className="relative z-10 w-full max-w-[420px] flex flex-col items-center gap-4">
       <form
         onSubmit={submit}
         className="
-          relative
-          z-10
           w-full
-          max-w-[420px]
           rounded-[24px]
           border
-          border-white/[0.10]
+          border-border
           bg-black/[0.35]
           backdrop-blur-[24px]
           p-9
@@ -113,7 +109,6 @@ export function AuthGate() {
         "
       >
 
-        {/* Logo */}
         <div className="flex justify-center mb-7">
           <img
             src={forgeLogo}
@@ -122,7 +117,6 @@ export function AuthGate() {
           />
         </div>
 
-        {/* Top Label */}
         <p
           className="
             text-[11px]
@@ -139,7 +133,6 @@ export function AuthGate() {
             : "Login to your account"}
         </p>
 
-        {/* Main Heading */}
         <h1
           className="
             text-[36px]
@@ -157,7 +150,6 @@ export function AuthGate() {
             : "Welcome Back!"}
         </h1>
 
-        {/* Subtitle */}
         <p
           className="
             text-[14px]
@@ -172,7 +164,6 @@ export function AuthGate() {
             : "Enter your Credentials"}
         </p>
 
-        {/* Email */}
         <label className="block mb-5">
           <span
             className={`
@@ -197,7 +188,7 @@ export function AuthGate() {
               px-4
               rounded-[12px]
               border
-              border-white/15
+              border-border-hover
               bg-black/30
               backdrop-blur-md
               text-[14px]
@@ -206,7 +197,7 @@ export function AuthGate() {
               outline-none
               transition-all
               duration-300
-              focus:border-[#7C6CF3]/50
+              focus:border-accent/50
               focus:bg-black/40
               focus:shadow-[0_0_0_1px_rgba(124,108,243,0.18),0_0_15px_rgba(124,108,243,0.55),0_8px_35px_rgba(124,108,243,0.35)]
             "
@@ -214,7 +205,6 @@ export function AuthGate() {
           />
         </label>
 
-        {/* Password */}
         <label className="block mb-5">
           <span
             className={`
@@ -245,7 +235,7 @@ export function AuthGate() {
                 pr-12
                 rounded-[12px]
                 border
-                border-white/15
+                border-border-hover
                 bg-black/30
                 backdrop-blur-md
                 text-[14px]
@@ -254,14 +244,13 @@ export function AuthGate() {
                 outline-none
                 transition-all
                 duration-300
-                focus:border-[#7C6CF3]/50
+                focus:border-accent/50
                 focus:bg-black/40
                 focus:shadow-[0_0_0_1px_rgba(124,108,243,0.18),0_0_15px_rgba(124,108,243,0.55),0_8px_35px_rgba(124,108,243,0.35)]
               "
               required
             />
 
-            {/* Show / Hide Password */}
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
@@ -293,7 +282,7 @@ export function AuthGate() {
               }
             >
               {showPassword ? (
-                /* Eye Off */
+
                 <svg
                   width="18"
                   height="18"
@@ -311,7 +300,7 @@ export function AuthGate() {
                   <path d="M6.6 6.6C4.8 7.8 3.5 9.5 2.2 11.5a1.8 1.8 0 0 0 0 1C3.5 14.5 7 18 12 18c1 0 1.9-.2 2.8-.5" />
                 </svg>
               ) : (
-                /* Eye */
+
                 <svg
                   width="18"
                   height="18"
@@ -331,7 +320,6 @@ export function AuthGate() {
           </div>
         </label>
 
-        {/* Forgot Password (sign-in only) */}
         {mode === "signin" && (
           <button
             type="button"
@@ -356,21 +344,18 @@ export function AuthGate() {
           </button>
         )}
 
-        {/* Error Message */}
         {error && (
-          <p className="type-secondary text-red-500 mb-4 text-center">
+          <p className="type-secondary text-danger mb-4 text-center">
             {error}
           </p>
         )}
 
-        {/* Success Message */}
         {info && (
-          <p className="type-secondary text-emerald-400 mb-4 text-center">
+          <p className="type-secondary text-success mb-4 text-center">
             {info}
           </p>
         )}
 
-        {/* Submit Button */}
 <button
   type="submit"
   disabled={busy}
@@ -386,12 +371,12 @@ export function AuthGate() {
     bg-accent
     hover:bg-accent-hover
     active:bg-accent/80
-    text-white
+    text-black
     px-4
     py-2.5
     rounded-[14px]
     border
-    border-white/10
+    border-border
     shadow-[0_0_18px_rgba(124,108,243,0.22)]
     hover:shadow-[0_0_30px_rgba(124,108,243,0.48)]
     disabled:opacity-60
@@ -408,27 +393,67 @@ export function AuthGate() {
       : "Sign in"}
 </button>
 
-        {/* Sign In / Sign Up Toggle */}
-        <button
-          type="button"
-          onClick={toggleMode}
-          className="
-            type-secondary
-            w-full
-            text-center
-            mt-5
-            text-[13px]
-            text-white/65
-            hover:text-white
-            transition-colors
-          "
-        >
-          {mode === "signup"
-            ? "Already have an account? Sign in"
-            : "New here? Create an account"}
-        </button>
+<button
+  type="button"
+  onClick={toggleMode}
+  className="
+    type-secondary
+    w-full
+    text-center
+    mt-5
+    text-[13px]
+    text-white/55
+    transition-colors
+  "
+>
+  {mode === "signup" ? (
+    <>
+      Already have an account?{" "}
+      <span className="text-white/90 hover:text-white transition-colors">
+        Sign in
+      </span>
+    </>
+  ) : (
+    <>
+      New here?{" "}
+      <span className="text-white/90 hover:text-white transition-colors">
+        Create an account
+      </span>
+    </>
+  )}
+</button>
 
       </form>
+
+      {onExploreDemo && (
+        <button
+          type="button"
+          onClick={onExploreDemo}
+          className="
+            w-full
+            rounded-[16px]
+            border
+            border-border
+            bg-black/[0.20]
+            backdrop-blur-[16px]
+            px-5
+            py-3.5
+            text-center
+            transition-all
+            duration-300
+            hover:bg-black/[0.30]
+            hover:border-border-hover
+          "
+        >
+          <span className="type-button block text-[16px] font-medium text-white/85">
+            Explore Forge Demo
+          </span>
+          <span className="type-secondary block text-[10px] text-white/45 mt-0.5">
+            No account required
+          </span>
+        </button>
+      )}
+      </div>
       )}
 
       {mode === "forgot" && (
@@ -458,8 +483,6 @@ export function AuthGate() {
   );
 }
 
-/* --------------------------- Forgot password card --------------------------- */
-
 const cardClass = `
   relative
   z-10
@@ -467,7 +490,7 @@ const cardClass = `
   max-w-[420px]
   rounded-[24px]
   border
-  border-white/[0.10]
+  border-border
   bg-black/[0.35]
   backdrop-blur-[24px]
   p-9
@@ -489,7 +512,7 @@ const emailInputClass = `
   px-4
   rounded-[12px]
   border
-  border-white/15
+  border-border-hover
   bg-black/30
   backdrop-blur-md
   text-[14px]
@@ -498,7 +521,7 @@ const emailInputClass = `
   outline-none
   transition-all
   duration-300
-  focus:border-[#7C6CF3]/50
+  focus:border-accent/50
   focus:bg-black/40
   focus:shadow-[0_0_0_1px_rgba(124,108,243,0.18),0_0_15px_rgba(124,108,243,0.55),0_8px_35px_rgba(124,108,243,0.35)]
 `;
@@ -519,7 +542,7 @@ const submitBtnClass = `
   py-2.5
   rounded-[14px]
   border
-  border-white/10
+  border-border
   shadow-[0_0_18px_rgba(124,108,243,0.22)]
   hover:shadow-[0_0_30px_rgba(124,108,243,0.48)]
   disabled:opacity-60
@@ -587,7 +610,7 @@ function ForgotPasswordCard({ email, setEmail, onSent, onBack }) {
         />
       </label>
 
-      {error && <p className="type-secondary text-red-500 mb-4 text-center">{error}</p>}
+      {error && <p className="type-secondary text-danger mb-4 text-center">{error}</p>}
 
       <button type="submit" disabled={busy} className={submitBtnClass}>
         {busy ? "Please wait…" : "Send reset link"}

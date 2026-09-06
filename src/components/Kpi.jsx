@@ -2,8 +2,6 @@ import { AppIcon } from "./AppIcon";
 import { useApp } from "../context/AppContext";
 import { Card } from "./Card";
 
-/* ------------------------------- KPI card ------------------------------- */
-
 export function Kpi({ label, value, sub, trend, icon: Icon }) {
   const { theme } = useApp();
   return (
@@ -13,7 +11,7 @@ export function Kpi({ label, value, sub, trend, icon: Icon }) {
           <p className={`type-card-label opacity-80 ${theme.subtext}`}>{label}</p>
           <p className="type-display-number mt-2 sm:mt-3 truncate">{value}</p>
           {sub && (
-            <p className={`type-secondary mt-2 sm:mt-3 flex items-center gap-1 ${trend === "up" ? "text-emerald-500" : trend === "down" ? "text-red-500" : theme.faint}`}>
+            <p className={`type-secondary mt-2 sm:mt-3 flex items-center gap-1 ${trend === "up" ? "text-success" : trend === "down" ? "text-danger" : theme.faint}`}>
               {trend === "up" && <AppIcon name="ui.trendUp" size={12} />}
               {trend === "down" && <AppIcon name="ui.trendDown" size={12} />}
               {sub}

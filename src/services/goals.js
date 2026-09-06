@@ -50,10 +50,6 @@ export async function deleteGoal(id) {
   return { error };
 }
 
-// Contribution is a straight increment on the DB side to avoid a stale-read
-// race between two devices contributing at nearly the same time (increment
-// happens in Postgres via the raw SQL expression, not by sending back a
-// client-computed new total).
 export async function contributeGoal(id, amount) {
   const { data, error } = await call(
     supabase.rpc("increment_goal", { p_goal_id: id, p_amount: Number(amount) }),

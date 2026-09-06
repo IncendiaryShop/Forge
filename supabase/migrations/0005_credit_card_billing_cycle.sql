@@ -1,32 +1,7 @@
--- ============================================================================
--- Phase 7 — Credit Card Statement & Billing Cycle.
--- Adds Statement Date / Payment Due Date to accounts (Credit Card only,
--- nullable — absent for every other account type and for any existing
--- Credit Card that hasn't configured them yet), plus a new
--- credit_card_statements table holding FROZEN statement-balance snapshots.
---
--- Outstanding (accountOutstanding() in App.jsx) is intentionally left
--- completely untouched by this migration — it stays the live, ever-changing
--- "total currently owed" figure. Statement Balance is a different thing: a
--- snapshot of what Outstanding was AT THE MOMENT a statement was generated,
--- which must NOT change when later transactions change Outstanding. That's
--- exactly why it needs its own stored row rather than being derived.
---
--- Idempotent: safe to re-run.
--- ============================================================================
-
 alter table public.accounts
   add column if not exists statement_date int check (statement_date is null or statement_date between 1 and 31),
   add column if not exists payment_due_date int check (payment_due_date is null or payment_due_date between 1 and 31);
 
--- ----------------------------------------------------------------------------
--- credit_card_statements
--- One row per (account, billing cycle). `cycle_key` is 'YYYY-MM' identifying
--- which cycle the statement covers (matches the frontend's cycleKey() in
--- utils/creditCardBilling.js) — `unique (account_id, cycle_key)` is what
--- makes "generate a statement for a cycle that already has one" a clean,
--- friendly rejection instead of a silent duplicate.
--- ----------------------------------------------------------------------------
 create table if not exists public.credit_card_statements (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -66,19 +41,6 @@ exception when undefined_object then
   create publication supabase_realtime for table public.credit_card_statements;
 end $$;
 
--- ============================================================================
--- generate_statement — freezes the Credit Card's CURRENT Outstanding into a
--- statement row for its current billing cycle. Does not touch accounts,
--- transactions, or Outstanding in any way — this is a billing/accounting
--- record only, never a transaction (matches Phase 7's "do not automatically
--- create duplicate transactions just because a statement is generated").
---
--- Outstanding is computed with the exact same formula as
--- accountOutstanding() in App.jsx / pay_emi_installment's Phase 6 hardening,
--- so this is the third place that formula now lives (JS, pay_emi_installment,
--- and here) — all three are required to independently verify the same fact
--- at their own layer, same reasoning as Phase 6.
--- ============================================================================
 create or replace function public.generate_statement(
   p_account_id uuid,
   p_cycle_key text,

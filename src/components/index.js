@@ -33,3 +33,9 @@ export { EmiSchedule } from "./EmiSchedule";
 export { LoanSchedule } from "./LoanSchedule";
 
 export { DatePicker } from "./DatePicker";
+
+export { InvoiceGenerator } from "./InvoiceGenerator";
+
+export { InvoiceDetailModal } from "./InvoiceDetailModal";
+
+export { ManageClientsModal } from "./ManageClientsModal";

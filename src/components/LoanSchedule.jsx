@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { Field } from "./Field";
 import { Select } from "./Select";
-import { TextInput } from "./TextInput";
 import { DatePicker } from "./DatePicker";
 import { PrimaryButton } from "./PrimaryButton";
 import { GhostButton } from "./GhostButton";
@@ -11,26 +10,22 @@ import { ProgressBar } from "./ProgressBar";
 import { fmt, todayISO } from "../utils/helpers";
 
 const INSTALLMENT_STATUS_STYLES = {
-  Paid: "bg-emerald-500/15 text-emerald-300",
-  Upcoming: "bg-amber-500/15 text-amber-300",
-  Preclosed: "bg-sky-500/15 text-sky-300",
+  Paid: "bg-success/15 text-success",
+  Upcoming: "bg-warning/15 text-warning",
+  Preclosed: "bg-white/10 text-subtext",
 };
 
 const LOAN_STATUS_STYLES = {
   Active: "bg-accent/12 text-accent",
-  Completed: "bg-emerald-500/15 text-emerald-300",
-  Preclosed: "bg-sky-500/15 text-sky-300",
+  Completed: "bg-success/15 text-success",
+  Preclosed: "bg-white/10 text-subtext",
 };
 
-// Display text differs from the stored status value only for Preclosed
-// ("Pre-closed" reads better than the raw "Preclosed") — every other status
-// is shown as-is. Same presentation-only mapping pattern as EmiSchedule.jsx.
-// The stored/database value stays "Preclosed" — only this label changes.
 const STATUS_LABELS = {
   Preclosed: "Pre-closed",
 };
 
-export function LoanSchedule({ account, onDone }) {
+export function LoanSchedule({ account }) {
   const { data, theme, payLoanInstallment, precloseLoan, insufficientFundsError, loanOutstandingPrincipal } = useApp();
 
   const installments = data.loanInstallments
@@ -40,16 +35,14 @@ export function LoanSchedule({ account, onDone }) {
   const payableAccounts = data.accounts.filter((a) => a.type === "Bank" || a.type === "Cash");
   const paidCount = installments.filter((i) => i.status === "Paid").length;
   const pct = installments.length > 0 ? (paidCount / installments.length) * 100 : 0;
-  // Authoritative, transaction-derived figure (App.jsx) — not re-summed from
-  // installment rows here, so it can never disagree with what pre-closure
-  // (or any other Loan action) actually did to the account.
+
   const outstanding = loanOutstandingPrincipal(account.id);
 
   const remainingInstallments = installments.filter((i) => i.status === "Upcoming");
   const loanStatus = account.loanStatus || "Active";
   const canPreclose = loanStatus === "Active" && outstanding > 0 && remainingInstallments.length > 0;
 
-  const [payTarget, setPayTarget] = useState(null); // installment | null
+  const [payTarget, setPayTarget] = useState(null);
   const [payAccount, setPayAccount] = useState(payableAccounts[0]?.id || "");
   const [payDate, setPayDate] = useState(todayISO());
   const [error, setError] = useState("");
@@ -172,7 +165,7 @@ export function LoanSchedule({ account, onDone }) {
           <Field label="Payment Date">
             <DatePicker value={payDate} onChange={(e) => setPayDate(e.target.value)} required />
           </Field>
-          {error && <p className="type-secondary text-red-500">{error}</p>}
+          {error && <p className="type-secondary text-danger">{error}</p>}
           <div className="flex items-center gap-3">
             <GhostButton type="button" className="flex-1 justify-center" onClick={() => setPayTarget(null)}>Cancel</GhostButton>
             <PrimaryButton type="submit" className="flex-1 justify-center">Confirm Payment</PrimaryButton>
@@ -201,7 +194,7 @@ export function LoanSchedule({ account, onDone }) {
               <Field label="Settlement Date">
                 <DatePicker value={precloseDate} onChange={(e) => setPrecloseDate(e.target.value)} required />
               </Field>
-              {precloseError && <p className="type-secondary text-red-500">{precloseError}</p>}
+              {precloseError && <p className="type-secondary text-danger">{precloseError}</p>}
               <div className="flex items-center gap-3">
                 <GhostButton type="button" className="flex-1 justify-center" onClick={() => setPrecloseTarget(false)}>Cancel</GhostButton>
                 <PrimaryButton type="submit" className="flex-1 justify-center">Pre-close Loan</PrimaryButton>

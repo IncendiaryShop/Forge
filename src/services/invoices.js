@@ -2,7 +2,7 @@ import { supabase } from "../lib/supabase";
 import { call } from "./errors";
 import { mapTransactionRow } from "./transactions";
 
-const fromRow = (r) => ({
+export const fromRow = (r) => ({
   id: r.id,
   invoiceNumber: r.invoice_number,
   client: r.client,
@@ -12,6 +12,21 @@ const fromRow = (r) => ({
   paymentDate: r.payment_date,
   paymentAccountId: r.payment_account_id,
   transactionId: r.transaction_id,
+
+  kind: r.kind || "manual",
+  dueDate: r.due_date ?? null,
+  paymentTerms: r.payment_terms ?? null,
+  currency: r.currency || "INR",
+  seller: r.seller ?? null,
+  billTo: r.bill_to ?? null,
+  items: r.items ?? [],
+  discount: Number(r.discount) || 0,
+  taxRate: Number(r.tax_rate) || 0,
+  notes: r.notes ?? null,
+  paymentInfo: r.payment_info ?? null,
+  pdfPath: r.pdf_path ?? null,
+  pdfGeneratedAt: r.pdf_generated_at ?? null,
+  needsRegeneration: !!r.needs_regeneration,
 });
 
 const toRow = (i) => ({
@@ -56,12 +71,6 @@ export async function deleteInvoice(id) {
   return { error };
 }
 
-// Pays an invoice via the pay_invoice() Postgres RPC (see supabase/schema.sql)
-// — ownership checks, duplicate-payment check, transaction insert, and
-// invoice update all happen atomically in one database transaction, so a
-// mid-flight failure can never leave an invoice showing "Paid" with no money
-// actually recorded (the exact bug found and fixed in the seed data during
-// the earlier QA pass).
 export async function payInvoice(userId, invoice, accountId, date) {
   const { data, error } = await call(
     supabase.rpc("pay_invoice", { p_invoice_id: invoice.id, p_account_id: accountId, p_date: date }),

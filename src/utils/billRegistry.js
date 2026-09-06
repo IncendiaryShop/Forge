@@ -1,22 +1,4 @@
-/* -------------------------------------------------------------------------
-   Centralized recurring-bill semantic type registry.
 
-   Distinct from serviceRegistry.js (real brand logos, rendered via
-   <ServiceLogo />) and iconRegistry.js (the raw icon lookup table, rendered
-   via <AppIcon />) — this file is the single place that:
-
-     1. Lists the common non-brand recurring bill types (rent, electricity,
-        water, ...) as selectable provider options, each pointing at an
-        existing `bills.*` icon key from iconRegistry.js.
-
-     2. Recognizes a bill's semantic type from its name/category, so
-        "Other / Custom" bills with a recognizable name (e.g. "House Rent")
-        still get the right icon instead of the generic fallback.
-
-   BillForm.jsx and BillsPage.jsx both call resolveBillDisplay() below
-   rather than each re-implementing this matching — keeps the recognition
-   logic in one place.
-------------------------------------------------------------------------- */
 
 import { SERVICES } from "./serviceRegistry";
 
@@ -101,11 +83,6 @@ export function getBillType(id) {
   return BILL_TYPES.find((t) => t.id === id) || null;
 }
 
-// Word-based matching only (never a bare substring check) so e.g. "rent"
-// doesn't fire on "parent", and "gas" doesn't fire on "Vegas Trip".
-//
-// "Wi-Fi" / "Wi Fi" / "WiFi" are normalized to one token before splitting
-// so all three spellings match the same "wifi" keyword.
 function nameWords(name) {
   const normalized = (name || "")
     .toLowerCase()
@@ -118,11 +95,6 @@ function nameWords(name) {
     .filter(Boolean);
 }
 
-// Recognizes a bill's semantic type from its name, falling back to category
-// only for categories that unambiguously imply one type.
-//
-// Utilities is deliberately excluded because it is shared by multiple
-// different bill types.
 export function getBillSemanticType(name, category) {
   const words = nameWords(name);
 
@@ -145,12 +117,6 @@ export function getBillSemanticType(name, category) {
   );
 }
 
-// Single source of truth for what this bill should display.
-//
-// A. Recognized brand provider -> ServiceLogo
-// B. Provider is a semantic bill type -> AppIcon
-// C. Custom provider with recognizable name/category -> AppIcon
-// D. Anything else -> generic AppIcon
 export function resolveBillDisplay(bill) {
   const providerId = bill?.provider || "custom";
 

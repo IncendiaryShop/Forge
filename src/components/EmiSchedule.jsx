@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { Field } from "./Field";
 import { Select } from "./Select";
-import { TextInput } from "./TextInput";
 import { DatePicker } from "./DatePicker";
 import { PrimaryButton } from "./PrimaryButton";
 import { GhostButton } from "./GhostButton";
@@ -12,20 +11,17 @@ import { ProgressBar } from "./ProgressBar";
 import { fmt, todayISO } from "../utils/helpers";
 
 const INSTALLMENT_STATUS_STYLES = {
-  Paid: "bg-emerald-500/15 text-emerald-300",
-  Upcoming: "bg-amber-500/15 text-amber-300",
+  Paid: "bg-success/15 text-success",
+  Upcoming: "bg-warning/15 text-warning",
 };
 
 const PLAN_STATUS_STYLES = {
   Active: "bg-accent/12 text-accent",
-  Completed: "bg-emerald-500/15 text-emerald-300",
+  Completed: "bg-success/15 text-success",
   Cancelled: "bg-white/10 text-white/60",
-  Preclosed: "bg-sky-500/15 text-sky-300",
+  Preclosed: "bg-white/10 text-subtext",
 };
 
-// Display text differs from the stored status value only for Preclosed
-// ("Pre-closed" reads better than the raw "Preclosed") — every other status
-// is shown as-is.
 const PLAN_STATUS_LABELS = {
   Preclosed: "Pre-closed",
 };
@@ -46,11 +42,11 @@ export function EmiSchedule({ plan, onDone }) {
   const remainingAmount = remainingInstallments.reduce((s, i) => s + Number(i.amount), 0);
   const canPreclose = plan.status === "Active" && remainingInstallments.length > 0;
 
-  const [payTarget, setPayTarget] = useState(null); // installment | null
+  const [payTarget, setPayTarget] = useState(null);
   const [payAccount, setPayAccount] = useState(payableAccounts[0]?.id || "");
   const [payDate, setPayDate] = useState(todayISO());
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [precloseTarget, setPrecloseTarget] = useState(false); // showing the pre-close form
+  const [precloseTarget, setPrecloseTarget] = useState(false);
   const [precloseAccount, setPrecloseAccount] = useState(payableAccounts[0]?.id || "");
   const [precloseDate, setPrecloseDate] = useState(todayISO());
   const [precloseError, setPrecloseError] = useState("");
@@ -187,7 +183,7 @@ export function EmiSchedule({ plan, onDone }) {
           <Field label="Payment Date">
             <DatePicker value={payDate} onChange={(e) => setPayDate(e.target.value)} required />
           </Field>
-          {error && <p className="type-secondary text-red-500">{error}</p>}
+          {error && <p className="type-secondary text-danger">{error}</p>}
           <div className="flex items-center gap-3">
             <GhostButton type="button" className="flex-1 justify-center" onClick={() => setPayTarget(null)}>Cancel</GhostButton>
             <PrimaryButton type="submit" className="flex-1 justify-center">Confirm Payment</PrimaryButton>
@@ -216,7 +212,7 @@ export function EmiSchedule({ plan, onDone }) {
               <Field label="Settlement Date">
                 <DatePicker value={precloseDate} onChange={(e) => setPrecloseDate(e.target.value)} required />
               </Field>
-              {precloseError && <p className="type-secondary text-red-500">{precloseError}</p>}
+              {precloseError && <p className="type-secondary text-danger">{precloseError}</p>}
               <div className="flex items-center gap-3">
                 <GhostButton type="button" className="flex-1 justify-center" onClick={() => setPrecloseTarget(false)}>Cancel</GhostButton>
                 <PrimaryButton type="submit" className="flex-1 justify-center">Pre-close EMI</PrimaryButton>
@@ -233,12 +229,12 @@ export function EmiSchedule({ plan, onDone }) {
       <div className={`border-t pt-4 ${theme.rowBorder}`}>
         {confirmingDelete ? (
           <div className="space-y-3">
-            <p className="type-secondary text-red-500">
+            <p className="type-secondary text-danger">
               Delete this EMI plan? Paid installments and their transactions stay in your history — only the plan and its schedule are removed. This cannot be undone.
             </p>
             <div className="flex items-center gap-3">
               <GhostButton className="flex-1 justify-center" onClick={() => setConfirmingDelete(false)}>Cancel</GhostButton>
-              <PrimaryButton className="flex-1 justify-center !bg-red-500 hover:!bg-red-600" onClick={confirmDelete}>Delete EMI Plan</PrimaryButton>
+              <PrimaryButton className="flex-1 justify-center !bg-danger hover:!bg-danger/85" onClick={confirmDelete}>Delete EMI Plan</PrimaryButton>
             </div>
           </div>
         ) : (

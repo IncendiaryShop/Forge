@@ -1,24 +1,3 @@
--- ============================================================================
--- Phase 6 — EMI Payment Hardening.
--- pay_emi_installment() previously validated ownership/already-paid/self-
--- payment only, and relied entirely on the frontend (insufficientFundsError /
--- creditCardPaymentError in App.jsx) to enforce the Phase 3 Bank/Cash
--- insufficient-funds rule and the Phase 4 "payment can't exceed outstanding"
--- rule. This redefinition adds both checks INSIDE the function, computed the
--- same way as their JS counterparts (accountBalance() / accountOutstanding()
--- in App.jsx), so a call that bypasses the frontend (or a future frontend
--- bug) can no longer create a payment that overdraws a Bank/Cash account or
--- overpays a card. Everything still runs inside the function's single
--- implicit transaction, so a rejected check leaves no partial writes.
---
--- Also added: the EMI plan itself must be 'Active' — the existing status
--- check constraint on emi_plans already allows 'Cancelled', but until now
--- nothing stopped an installment under a non-Active plan from being paid.
---
--- No schema change: only the function body is redefined. Idempotent: safe to
--- re-run.
--- ============================================================================
-
 create or replace function public.pay_emi_installment(
   p_installment_id uuid,
   p_source_account_id uuid,
@@ -73,10 +52,6 @@ begin
     raise exception 'Credit Card account not found or not owned by the current user';
   end if;
 
-  -- Phase 3: Bank/Cash insufficient-funds check — mirrors accountBalance()
-  -- in App.jsx exactly (Income +, Expense -, Transfer-out -, Transfer-in +),
-  -- applied only when the source isn't itself a Credit Card (Credit Cards
-  -- never use this rule — they use their own outstanding/limit logic).
   if v_source.type <> 'Credit Card' then
     select coalesce(v_source.opening, 0)
       + coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = p_source_account_id), 0)
@@ -92,8 +67,6 @@ begin
     end if;
   end if;
 
-  -- Phase 4: Credit Card outstanding check — mirrors accountOutstanding() in
-  -- App.jsx exactly. A payment can never exceed what's actually owed.
   select coalesce(v_card.opening, 0)
     + coalesce(sum(t.amount) filter (where t.type = 'Expense' and t.account_id = v_plan.account_id), 0)
     - coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = v_plan.account_id), 0)

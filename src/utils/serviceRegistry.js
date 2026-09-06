@@ -3,23 +3,6 @@ import {
   siGithub, siDropbox, siNotion, siZoom,
 } from "simple-icons";
 
-/* -------------------------------------------------------------------------
-   Centralized recurring-payment service registry.
-   Each entry maps a stable provider id -> display name -> official brand
-   icon (from the `simple-icons` package: bundled, offline, legitimate
-   brand assets — https://simpleicons.org).
-
-   A handful of requested brands (Amazon, Microsoft, Adobe, ChatGPT/OpenAI,
-   Canva, Slack, Disney+, Prime Video) are not distributed by simple-icons
-   because their trademark holders have not granted redistribution
-   permission for that library. Rather than fabricate an approximation of
-   those marks, `icon` is left null for them and the UI falls back to the
-   generic recurring-payment icon — the same fallback used for "custom"
-   services and for bills with no provider set.
-
-   Adding a newly-supported brand later is a single entry here.
-------------------------------------------------------------------------- */
-
 export const SERVICES = [
   { id: "youtube", name: "YouTube / YouTube Premium", icon: siYoutube },
   { id: "netflix", name: "Netflix", icon: siNetflix },

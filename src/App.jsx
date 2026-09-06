@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import MoltenMetal from "./components/MoltenMetal";
 import { AppCtx } from "./context/AppContext";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./context/AuthCtx";
@@ -16,6 +15,7 @@ import { Sidebar } from "./components/Sidebar";
 import { MobileNav } from "./components/MobileNav";
 import { MobileBrandHeader } from "./components/MobileBrandHeader";
 import { Modal } from "./components/Modal";
+import { PrimaryButton } from "./components/PrimaryButton";
 import { ScrollBounceBoundary } from "./components/ScrollBounceBoundary";
 import { TransactionForm } from "./forms/TransactionForm";
 import { Dashboard } from "./pages/Dashboard";
@@ -26,18 +26,23 @@ import { BillsPage } from "./pages/BillsPage";
 import { InvoicesPage } from "./pages/InvoicesPage";
 import { GoalsPage } from "./pages/GoalsPage";
 
-import * as accountsSvc from "./services/accounts";
-import * as txnSvc from "./services/transactions";
-import * as budgetsSvc from "./services/budgets";
-import * as billsSvc from "./services/bills";
-import * as invoicesSvc from "./services/invoices";
-import * as goalsSvc from "./services/goals";
-import * as emiPlansSvc from "./services/emiPlans";
-import * as emiInstallmentsSvc from "./services/emiInstallments";
-import * as creditCardStatementsSvc from "./services/creditCardStatements";
-import * as loanInstallmentsSvc from "./services/loanInstallments";
+import * as realAccountsSvc from "./services/accounts";
+import * as realTxnSvc from "./services/transactions";
+import * as realBudgetsSvc from "./services/budgets";
+import * as realBillsSvc from "./services/bills";
+import * as realInvoicesSvc from "./services/invoices";
+import * as realInvoiceGeneratorSvc from "./services/invoiceGenerator";
+import * as invoiceStorageSvc from "./services/invoiceStorage";
+import { buildInvoicePdfBytes } from "./lib/pdf/invoicePdf";
+import { computeTotals } from "./utils/invoiceCalc";
+import * as realGoalsSvc from "./services/goals";
+import * as realClientsSvc from "./services/clients";
+import * as realEmiPlansSvc from "./services/emiPlans";
+import * as realEmiInstallmentsSvc from "./services/emiInstallments";
+import * as realCreditCardStatementsSvc from "./services/creditCardStatements";
+import * as realLoanInstallmentsSvc from "./services/loanInstallments";
 
-/* --------------------------------- Shell --------------------------------- */
+import * as demoSvc from "./demo/demoStore";
 
 function startOfToday() {
   const d = new Date();
@@ -59,26 +64,33 @@ function ErrorBanner({ message, onDismiss }) {
   );
 }
 
-/* ----------------------------- Authenticated app ----------------------------- */
-/* Everything below only ever mounts once we have a signed-in user and the
-   one-time local->cloud migration (if any) is resolved — see MigrationGate. */
+function AuthenticatedApp({ userId, onSignOut, isDemoMode = false, onCreateAccount }) {
 
-function AuthenticatedApp({ userId, onSignOut }) {
+  const accountsSvc = isDemoMode ? demoSvc : realAccountsSvc;
+  const txnSvc = isDemoMode ? demoSvc : realTxnSvc;
+  const budgetsSvc = isDemoMode ? demoSvc : realBudgetsSvc;
+  const billsSvc = isDemoMode ? demoSvc : realBillsSvc;
+  const invoicesSvc = isDemoMode ? demoSvc : realInvoicesSvc;
+  const invoiceGeneratorSvc = isDemoMode ? demoSvc : realInvoiceGeneratorSvc;
+  const goalsSvc = isDemoMode ? demoSvc : realGoalsSvc;
+  const clientsSvc = isDemoMode ? demoSvc : realClientsSvc;
+  const emiPlansSvc = isDemoMode ? demoSvc : realEmiPlansSvc;
+  const emiInstallmentsSvc = isDemoMode ? demoSvc : realEmiInstallmentsSvc;
+  const creditCardStatementsSvc = isDemoMode ? demoSvc : realCreditCardStatementsSvc;
+  const loanInstallmentsSvc = isDemoMode ? demoSvc : realLoanInstallmentsSvc;
+
   const [data, setData] = useState(null);
-  const [dataStatus, setDataStatus] = useState("loading"); // loading | ready | error
+  const [dataStatus, setDataStatus] = useState("loading");
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
   const [page, setPage] = useState("dashboard");
-  // Global "quick add transaction" flow — surfaced from the mobile bottom
-  // nav's "+" button (see MobileNav.jsx) so it's reachable from any page,
-  // not just Transactions. Renders the same TransactionForm every other
-  // add-transaction entry point already uses.
+
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const channelsRef = useRef([]);
 
   const loadAll = useCallback(async () => {
     setDataStatus("loading");
-    const [accounts, transactions, budgets, bills, invoices, goals, emiPlans, emiInstallments, creditCardStatements, loanInstallments] = await Promise.all([
+    const [accounts, transactions, budgets, bills, invoices, goals, emiPlans, emiInstallments, creditCardStatements, loanInstallments, clients] = await Promise.all([
       accountsSvc.listAccounts(),
       txnSvc.listTransactions(),
       budgetsSvc.listBudgets(),
@@ -89,6 +101,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
       emiInstallmentsSvc.listEmiInstallments(),
       creditCardStatementsSvc.listCreditCardStatements(),
       loanInstallmentsSvc.listLoanInstallments(),
+      clientsSvc.listClients(),
     ]);
     const failed = [accounts, transactions, budgets, bills, invoices, goals, emiPlans, emiInstallments, creditCardStatements, loanInstallments].find((r) => r.error);
     if (failed) {
@@ -107,9 +120,12 @@ function AuthenticatedApp({ userId, onSignOut }) {
       emiInstallments: emiInstallments.data,
       creditCardStatements: creditCardStatements.data,
       loanInstallments: loanInstallments.data,
+
+      clients: clients.error ? [] : clients.data,
     });
     setDataStatus("ready");
-  }, []);
+
+  }, [accountsSvc, txnSvc, budgetsSvc, billsSvc, invoicesSvc, goalsSvc, emiPlansSvc, emiInstallmentsSvc, creditCardStatementsSvc, loanInstallmentsSvc, clientsSvc]);
 
   useEffect(() => {
     document.title = `${PAGE_TITLES[page]} • Forge`;
@@ -119,15 +135,10 @@ function AuthenticatedApp({ userId, onSignOut }) {
     queueMicrotask(loadAll);
   }, [loadAll, userId]);
 
-  // Realtime: one channel per user-owned table, filtered server-side to this
-  // user's rows (RLS applies to realtime too, so this filter is belt-and-
-  // braces, not the actual security boundary). On any INSERT/UPDATE/DELETE we
-  // simply refetch that table — simplest correct approach for this first
-  // migration pass; a finer-grained patch-in-place could follow later.
-  // Cleaned up on unmount and whenever userId changes so a sign-out/sign-in
-  // (or React StrictMode's double-invoke in dev) can never leave a duplicate
-  // subscription running.
   useEffect(() => {
+
+    if (isDemoMode) return;
+
     const tables = [
       { name: "accounts", refetch: accountsSvc.listAccounts, key: "accounts" },
       { name: "transactions", refetch: txnSvc.listTransactions, key: "transactions" },
@@ -139,6 +150,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
       { name: "emi_installments", refetch: emiInstallmentsSvc.listEmiInstallments, key: "emiInstallments" },
       { name: "credit_card_statements", refetch: creditCardStatementsSvc.listCreditCardStatements, key: "creditCardStatements" },
       { name: "loan_installments", refetch: loanInstallmentsSvc.listLoanInstallments, key: "loanInstallments" },
+      { name: "clients", refetch: clientsSvc.listClients, key: "clients" },
     ];
 
     const channels = tables.map(({ name, refetch, key }) =>
@@ -160,7 +172,8 @@ function AuthenticatedApp({ userId, onSignOut }) {
       channelsRef.current.forEach((ch) => supabase.removeChannel(ch));
       channelsRef.current = [];
     };
-  }, [userId]);
+
+  }, [userId, isDemoMode, accountsSvc, txnSvc, budgetsSvc, billsSvc, invoicesSvc, goalsSvc, emiPlansSvc, emiInstallmentsSvc, creditCardStatementsSvc, loanInstallmentsSvc, clientsSvc]);
 
   const accountBalance = (accountId) => {
     if (!data) return 0;
@@ -178,13 +191,6 @@ function AuthenticatedApp({ userId, onSignOut }) {
     return bal;
   };
 
-  // Credit Card outstanding — a liability, so its sign conventions are the
-  // mirror image of accountBalance() above: `opening` is the opening
-  // OUTSTANDING (amount already owed), Expenses increase it, Income/refunds
-  // decrease it, a transfer INTO the card (a payment) decreases it, and a
-  // transfer OUT of the card increases it. Non-Credit-Card accounts always
-  // resolve to 0 — normal bank/cash balance logic (accountBalance above)
-  // stays untouched by this.
   const accountOutstanding = (accountId) => {
     if (!data) return 0;
     const acc = data.accounts.find((a) => a.id === accountId);
@@ -201,19 +207,6 @@ function AuthenticatedApp({ userId, onSignOut }) {
     return outstanding;
   };
 
-  // Bank/Cash available-funds check — the single source of truth for
-  // "does this account have enough to cover an Expense/Transfer debit",
-  // used everywhere a debiting transaction can be created or edited
-  // (TransactionForm, the Bills "Mark Paid" flow, and the EMI installment
-  // "Mark Paid" flow). Deliberately excludes Credit Card accounts, which
-  // keep using their own Credit Limit / Outstanding logic (accountOutstanding
-  // above + the credit-limit check in TransactionForm) instead of this rule.
-  //
-  // getAvailableBalance mirrors accountBalance()'s own per-transaction
-  // branches in reverse, applied to at most one excluded transaction — so
-  // editing a transaction is evaluated as "what would the balance be with
-  // the OLD transaction's effect undone first", never double-counting it
-  // against the NEW requested amount.
   const getAvailableBalance = (accountId, excludeTxn) => {
     let bal = accountBalance(accountId);
     if (excludeTxn) {
@@ -230,7 +223,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
   const insufficientFundsError = (accountId, amount, excludeTxn) => {
     if (!data) return null;
     const acc = data.accounts.find((a) => a.id === accountId);
-    if (!acc || acc.type === "Credit Card") return null; // Credit Cards use their own limit logic, not this rule
+    if (!acc || acc.type === "Credit Card") return null;
     const available = getAvailableBalance(accountId, excludeTxn);
     const requested = Number(amount) || 0;
     if (requested > available) {
@@ -239,21 +232,10 @@ function AuthenticatedApp({ userId, onSignOut }) {
     return null;
   };
 
-  // Credit Card Payment check — a Transfer whose DESTINATION is a Credit
-  // Card is a payment against that card's outstanding, and a payment can
-  // never exceed what's actually owed. This is independent of (and in
-  // addition to) insufficientFundsError above, which already governs
-  // whether the SOURCE account can cover the debit — together they're the
-  // full validation for a Bank/Cash -> Credit Card transfer. Reuses
-  // accountOutstanding() (Phase 1) as its only source of outstanding, same
-  // "exclude the old transaction, then re-check" pattern as every other
-  // edit-aware validator here: only the OLD payment's effect on THIS card is
-  // undone (via `excludeTxn.transferAccount === accountId`), never anything
-  // else about the edited transaction.
   const creditCardPaymentError = (destinationAccountId, amount, excludeTxn) => {
     if (!data) return null;
     const acc = data.accounts.find((a) => a.id === destinationAccountId);
-    if (!acc || acc.type !== "Credit Card") return null; // only applies when the destination is a Credit Card
+    if (!acc || acc.type !== "Credit Card") return null;
 
     let outstanding = accountOutstanding(destinationAccountId);
     if (excludeTxn && excludeTxn.type === "Transfer" && excludeTxn.transferAccount === destinationAccountId) {
@@ -270,14 +252,6 @@ function AuthenticatedApp({ userId, onSignOut }) {
     return null;
   };
 
-  // Loan Outstanding Principal — a liability, derived the same way
-  // accountOutstanding() derives Credit Card outstanding: `opening` is the
-  // ORIGINAL PRINCIPAL, reduced by every principal-component Transfer
-  // recorded against this loan (pay_loan_installment always creates one such
-  // Transfer per paid installment — see supabase/schema.sql). Non-Loan
-  // accounts always resolve to 0. This is the ONLY place Outstanding
-  // Principal is computed — never stored, so it can never drift from the
-  // transaction history that backs it.
   const loanOutstandingPrincipal = (accountId) => {
     if (!data) return 0;
     const acc = data.accounts.find((a) => a.id === accountId);
@@ -289,12 +263,6 @@ function AuthenticatedApp({ userId, onSignOut }) {
     return Math.max(outstanding, 0);
   };
 
-  // Every mutating context function funnels through here so failures always
-  // surface the same way (a dismissible banner) instead of failing silently —
-  // required by section 10 of the migration brief. Success is applied
-  // directly from the row the server returned, rather than waiting for the
-  // realtime echo to arrive (which still arrives shortly after and is a
-  // harmless no-op re-set of the same data).
   const withError = async (promise) => {
     const result = await promise;
     if (result?.error) setActionError(result.error.message);
@@ -304,9 +272,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
   const ctx = {
     data: data ? {
       ...data,
-      // Expose `paid` derived from each bill's active billing cycle so every
-      // page reads the correct per-cycle status without knowing about
-      // paidCycle itself — unchanged from the pre-Supabase behavior.
+
       bills: data.bills.map((b) => ({ ...b, paid: b.paidCycle === getActiveBillingCycle(b, startOfToday()) })),
     } : data,
     dataStatus,
@@ -322,6 +288,14 @@ function AuthenticatedApp({ userId, onSignOut }) {
     userId,
     signOut: onSignOut,
     reload: loadAll,
+    isDemoMode,
+    onCreateAccount,
+    resetDemo: isDemoMode
+      ? () => {
+          demoSvc.resetDemo();
+          loadAll();
+        }
+      : undefined,
 
     addTransaction: async (t) => {
       if (t.type === "Expense" || t.type === "Transfer") {
@@ -352,12 +326,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
       const bill = data?.bills.find((b) => b.paidTransactionId === id);
       const r = await withError(txnSvc.deleteTransaction(id));
       if (r.error) return;
-      // Mirror the pre-Supabase behavior: deleting a bill's linked payment
-      // transaction also clears that bill's paid state for the cycle. The DB
-      // FK (ON DELETE SET NULL) already nulls bills.paid_transaction_id on
-      // its own; unpayBill additionally clears paid_cycle to match — its own
-      // "delete the linked transaction" step is a safe no-op here since it's
-      // already gone.
+
       if (bill) await withError(billsSvc.unpayBill(bill));
       setData((d) => d && ({ ...d, transactions: d.transactions.filter((x) => x.id !== id) }));
     },
@@ -449,6 +418,77 @@ function AuthenticatedApp({ userId, onSignOut }) {
       }));
     },
 
+    generateInvoice: async (model) => {
+      let bytes;
+      try {
+        bytes = await buildInvoicePdfBytes(model);
+      } catch (e) {
+        return { error: { message: e?.message || "Couldn't generate the PDF. Please check the invoice details." } };
+      }
+      const blobUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+
+      let pdfPath = null;
+      if (!isDemoMode) {
+        const up = await withError(invoiceStorageSvc.uploadInvoicePdf(userId, model.invoiceNumber, bytes));
+        if (up.error) return { error: up.error };
+        pdfPath = up.data.path;
+      }
+
+      const totals = computeTotals(model.items, model.discount, model.taxRate);
+      const r = await withError(invoiceGeneratorSvc.createGeneratedInvoice(userId, { ...model, pdfPath, total: totals.total }));
+      if (r.error) {
+        if (pdfPath) await invoiceStorageSvc.removeInvoiceFile(pdfPath);
+        return { error: r.error };
+      }
+      setData((d) => d && ({ ...d, invoices: [...d.invoices, r.data] }));
+      return { data: r.data, blobUrl };
+    },
+
+    saveGeneratedInvoice: async (id, model, regenerate) => {
+      let pdfPath = model.pdfPath;
+      let blobUrl = null;
+      if (regenerate) {
+        let bytes;
+        try {
+          bytes = await buildInvoicePdfBytes(model);
+        } catch (e) {
+          return { error: { message: e?.message || "Couldn't regenerate the PDF. Please check the invoice details." } };
+        }
+        blobUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+        if (!isDemoMode) {
+          const up = await withError(invoiceStorageSvc.uploadInvoicePdf(userId, model.invoiceNumber, bytes));
+          if (up.error) return { error: up.error };
+          pdfPath = up.data.path;
+        }
+      }
+      const totals = computeTotals(model.items, model.discount, model.taxRate);
+      const r = await withError(invoiceGeneratorSvc.updateGeneratedInvoice(id, { ...model, pdfPath, total: totals.total }, !!regenerate));
+      if (r.data) setData((d) => d && ({ ...d, invoices: d.invoices.map((x) => (x.id === id ? r.data : x)) }));
+      return { ...r, blobUrl };
+    },
+
+    regenerateInvoicePdf: async (id) => {
+      const invoice = data?.invoices.find((x) => x.id === id);
+      if (!invoice) return { error: { message: "Couldn't find this invoice." } };
+      let bytes;
+      try {
+        bytes = await buildInvoicePdfBytes(invoice);
+      } catch (e) {
+        return { error: { message: e?.message || "Couldn't regenerate the PDF. Please check the invoice details." } };
+      }
+      const blobUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      let pdfPath = invoice.pdfPath;
+      if (!isDemoMode) {
+        const up = await withError(invoiceStorageSvc.uploadInvoicePdf(userId, invoice.invoiceNumber, bytes));
+        if (up.error) return { error: up.error };
+        pdfPath = up.data.path;
+      }
+      const totals = computeTotals(invoice.items, invoice.discount, invoice.taxRate);
+      const r = await withError(invoiceGeneratorSvc.updateGeneratedInvoice(id, { ...invoice, pdfPath, total: totals.total }, true));
+      if (r.data) setData((d) => d && ({ ...d, invoices: d.invoices.map((x) => (x.id === id ? r.data : x)) }));
+      return { ...r, blobUrl };
+    },
+
     addGoal: async (g) => {
       const r = await withError(goalsSvc.createGoal(userId, g));
       if (r.data) setData((d) => d && ({ ...d, goals: [...d.goals, r.data] }));
@@ -466,11 +506,22 @@ function AuthenticatedApp({ userId, onSignOut }) {
       if (r.data) setData((d) => d && ({ ...d, goals: d.goals.map((x) => (x.id === id ? r.data : x)) }));
     },
 
-    // Converts an existing Expense transaction (on a Credit Card account)
-    // into an EMI plan + generated installment schedule, via the atomic
-    // create_emi_plan() RPC. The original transaction itself is never
-    // touched here — see services/emiPlans.js — so the card's outstanding
-    // is unaffected by conversion, exactly as required.
+    addClient: async (c) => {
+      const r = await withError(clientsSvc.createClient(userId, c));
+      if (r.data) setData((d) => d && ({ ...d, clients: [...d.clients, r.data] }));
+      return r;
+    },
+    updateClient: async (id, c) => {
+      const r = await withError(clientsSvc.updateClient(id, c));
+      if (r.data) setData((d) => d && ({ ...d, clients: d.clients.map((x) => (x.id === id ? r.data : x)) }));
+      return r;
+    },
+    deleteClient: async (id) => {
+      const r = await withError(clientsSvc.deleteClient(id));
+      if (!r.error) setData((d) => d && ({ ...d, clients: d.clients.filter((x) => x.id !== id) }));
+      return r;
+    },
+
     convertToEmi: async (transactionId, payload) => {
       const r = await withError(emiPlansSvc.createEmiPlan(userId, { transactionId, ...payload }));
       if (r.data) setData((d) => d && ({
@@ -487,10 +538,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
         emiInstallments: d.emiInstallments.filter((x) => x.emiPlanId !== id),
       }));
     },
-    // Settles every remaining installment on an Active EMI plan in one
-    // Transfer transaction and moves the plan to 'Preclosed'. See
-    // services/emiPlans.js precloseEmiPlan() / supabase/schema.sql
-    // preclose_emi_plan() for the full atomic/validated operation.
+
     precloseEmiPlan: async (planId, sourceAccountId, date, description) => {
       const r = await withError(emiPlansSvc.precloseEmiPlan(planId, sourceAccountId, date, description));
       if (r.data) setData((d) => d && ({
@@ -522,18 +570,11 @@ function AuthenticatedApp({ userId, onSignOut }) {
       }));
     },
 
-    // Freezes the Credit Card's current Outstanding into a statement row for
-    // the given billing cycle (see utils/creditCardBilling.js for cycle
-    // computation). Never touches accounts/transactions — a billing record
-    // only, not a transaction.
     generateStatement: async (accountId, cycleKey, statementDate, dueDate) => {
       const r = await withError(creditCardStatementsSvc.generateStatement(accountId, cycleKey, statementDate, dueDate));
       if (r.data) setData((d) => d && ({ ...d, creditCardStatements: [...d.creditCardStatements, r.data] }));
     },
 
-    // Disburses a Loan account (one-time) — records the disbursement Transfer
-    // and generates the full amortization schedule atomically. See
-    // services/loanInstallments.js / supabase/schema.sql disburse_loan().
     disburseLoan: async (accountId, destinationAccountId, date, installments, description) => {
       const r = await withError(loanInstallmentsSvc.disburseLoan(accountId, destinationAccountId, date, installments, description));
       if (r.data) setData((d) => d && ({
@@ -543,10 +584,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
         accounts: d.accounts.map((a) => (a.id === accountId ? { ...a, loanStatus: "Active" } : a)),
       }));
     },
-    // Pays one loan installment — splits the EMI into an interest Expense
-    // (if any) and a principal Transfer, atomically. See
-    // services/loanInstallments.js / supabase/schema.sql
-    // pay_loan_installment().
+
     payLoanInstallment: async (installment, sourceAccountId, date, description) => {
       const r = await withError(loanInstallmentsSvc.payLoanInstallment(installment, sourceAccountId, date, description));
       if (r.data) setData((d) => d && ({
@@ -562,10 +600,7 @@ function AuthenticatedApp({ userId, onSignOut }) {
           : d.accounts,
       }));
     },
-    // Pre-closes an Active loan — settles the entire remaining Outstanding
-    // Principal in one Transfer and marks every remaining installment
-    // Preclosed. See services/loanInstallments.js / supabase/schema.sql
-    // preclose_loan().
+
     precloseLoan: async (accountId, sourceAccountId, date, description) => {
       const r = await withError(loanInstallmentsSvc.precloseLoan(accountId, sourceAccountId, date, description));
       if (r.data) setData((d) => d && ({
@@ -588,13 +623,9 @@ function AuthenticatedApp({ userId, onSignOut }) {
     return (
       <CenteredScreen>
         <p className="mb-4">{loadError || "Couldn't load your data."}</p>
-        <button
-          type="button"
-          onClick={loadAll}
-          className="forge-button type-button inline-flex items-center gap-1.5 bg-accent hover:bg-accent-hover text-white px-4 py-2.5 rounded-[14px]"
-        >
+        <PrimaryButton onClick={loadAll}>
           Try again
-        </button>
+        </PrimaryButton>
       </CenteredScreen>
     );
   }
@@ -608,17 +639,9 @@ function AuthenticatedApp({ userId, onSignOut }) {
         </div>
 
         <div className="relative z-10 flex-1 min-w-0 flex flex-col">
-          {/* Mobile-only Forge branding — the Sidebar's logo is hidden
-              below md, so this fills that gap centrally (see
-              MobileBrandHeader.jsx). Hidden on md+ where the Sidebar's
-              own logo is visible instead. */}
+
           <MobileBrandHeader />
 
-          {/* Bottom padding on mobile reserves space for the fixed bottom
-              nav (see MobileNav.jsx) so page content is never hidden
-              behind it; the nav now floats above the edge with its own
-              gap, so this is a touch taller than the bar itself. lg:
-              drops it since the sidebar layout has no bottom nav at all. */}
           <main className="flex-1 w-full min-w-0 p-4 sm:p-6 lg:p-10 pb-20 md:pb-8 lg:pb-10">
             <ScrollBounceBoundary>
               {page === "dashboard" && <Dashboard />}
@@ -644,14 +667,45 @@ function AuthenticatedApp({ userId, onSignOut }) {
   );
 }
 
-/* --------------------------------- Gate --------------------------------- */
+const DEMO_FLAG_KEY = "forge_demo_active_v1";
+const DEMO_USER_ID = "demo-user";
 
 function Gate() {
   const { status, user, signOut } = useAuth();
+  const [demoActive, setDemoActive] = useState(() => {
+    try {
+      return sessionStorage.getItem(DEMO_FLAG_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const enterDemo = () => {
+    try {
+      sessionStorage.setItem(DEMO_FLAG_KEY, "1");
+    } catch (err) {
+      void err;
+    }
+    setDemoActive(true);
+  };
+
+  const exitDemo = () => {
+    try {
+      sessionStorage.removeItem(DEMO_FLAG_KEY);
+    } catch (err) {
+      void err;
+    }
+    demoSvc.resetDemo();
+    setDemoActive(false);
+  };
+
+  if (demoActive) {
+    return <AuthenticatedApp userId={DEMO_USER_ID} onSignOut={exitDemo} isDemoMode onCreateAccount={exitDemo} />;
+  }
 
   if (status === "loading") return <CenteredScreen>Checking your session…</CenteredScreen>;
   if (status === "recovery") return <ResetPasswordScreen />;
-  if (status === "signed-out") return <AuthGate />;
+  if (status === "signed-out") return <AuthGate onExploreDemo={enterDemo} />;
 
   return (
     <MigrationGate userId={user.id}>

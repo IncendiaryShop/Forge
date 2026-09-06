@@ -29,20 +29,20 @@ function CreditCardStats({ account, outstanding, theme, statements, onGenerateSt
 
   return (
     <div className="mt-3">
-      <p className={`type-display-number ${overLimit ? "text-red-500" : ""}`}>
+      <p className={`type-display-number ${overLimit ? "text-danger" : ""}`}>
         {fmt(outstanding)} <span className={`type-secondary font-normal ${theme.subtext}`}>used</span>
       </p>
       {limit > 0 ? (
         <>
-          <p className={`type-secondary mt-1 ${overLimit ? "text-red-500" : theme.subtext}`}>
+          <p className={`type-secondary mt-1 ${overLimit ? "text-danger" : theme.subtext}`}>
             {fmt(Math.max(available, 0))} available of {fmt(limit)} limit
           </p>
           <div className="mt-3">
-            <ProgressBar pct={pct} colorClass={overLimit ? "bg-red-500" : pct > 80 ? "bg-amber-500" : "bg-accent"} />
+            <ProgressBar pct={pct} colorClass={overLimit ? "bg-danger" : pct > 80 ? "bg-warning" : "bg-accent"} />
           </div>
         </>
       ) : (
-        <p className="type-secondary text-amber-400 mt-1">No credit limit set</p>
+        <p className="type-secondary text-warning mt-1">No credit limit set</p>
       )}
 
       {cycle && (
@@ -105,9 +105,9 @@ function LoanStats({ account, outstanding, theme, isDisbursed, onDisburse, onVie
 export function AccountsPage() {
   const { data, theme, accountBalance, accountOutstanding, loanOutstandingPrincipal, deleteAccount, generateStatement } = useApp();
   const [modal, setModal] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null); // { account, refCount } | null
-  const [disburseTarget, setDisburseTarget] = useState(null); // loan account | null
-  const [loanScheduleForId, setLoanScheduleForId] = useState(null); // loan account id | null
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [disburseTarget, setDisburseTarget] = useState(null);
+  const [loanScheduleForId, setLoanScheduleForId] = useState(null);
 
   const referenceCount = (accountId) =>
     data.transactions.filter(t => t.account === accountId || t.transferAccount === accountId).length;
@@ -123,11 +123,7 @@ export function AccountsPage() {
   };
 
   const handleGenerateStatement = (account, cycle) => {
-    // Local Y-M-D formatting, not toISOString() — cycle.statementDate/dueDate
-    // are local-midnight Date objects (from clampedDueDate), and
-    // toISOString() converts to UTC first, which can shift the calendar day
-    // backward for positive UTC offsets. This must stay exact for a billing
-    // date.
+
     const toLocalISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     generateStatement(account.id, cycle.cycleKey, toLocalISO(cycle.statementDate), cycle.dueDate ? toLocalISO(cycle.dueDate) : null);
   };
@@ -137,7 +133,7 @@ export function AccountsPage() {
   return (
     <div className="space-y-8">
       <div className="flex justify-end">
-        <PrimaryButton onClick={() => setModal("new")}><AppIcon name="ui.add" size={15} /> Add Account</PrimaryButton>
+        <PrimaryButton onClick={() => setModal("new")}>Add Account</PrimaryButton>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {data.accounts.map(a => {
@@ -149,9 +145,7 @@ export function AccountsPage() {
             <Card key={a.id} className="p-5 sm:p-7 relative group">
               <div className="flex items-start justify-between">
                 <AccountLogo account={a} size="md" />
-                {/* Always visible on touch devices — hover-only actions are
-                    unreachable without a mouse, so they only fade out on
-                    lg+ where hover is reliable. */}
+
                 <div className="forge-card-actions flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
                   <IconBtn icon="ui.edit" onClick={() => setModal(a)} title="Edit" />
                   <IconBtn icon="ui.delete" danger onClick={() => requestDelete(a)} title="Delete" />
@@ -177,7 +171,7 @@ export function AccountsPage() {
                   onViewSchedule={() => setLoanScheduleForId(a.id)}
                 />
               ) : (
-                <p className={`type-display-number mt-3 ${bal < 0 ? "text-red-500" : ""}`}>{fmt(bal)}</p>
+                <p className={`type-display-number mt-3 ${bal < 0 ? "text-danger" : ""}`}>{fmt(bal)}</p>
               )}
             </Card>
           );
@@ -195,13 +189,13 @@ export function AccountsPage() {
       )}
       {loanScheduleForAccount && (
         <Modal title="Loan Schedule" onClose={() => setLoanScheduleForId(null)} wide>
-          <LoanSchedule account={loanScheduleForAccount} onDone={() => setLoanScheduleForId(null)} />
+          <LoanSchedule account={loanScheduleForAccount} />
         </Modal>
       )}
       {deleteTarget && (
         <Modal title="Delete Account" onClose={() => setDeleteTarget(null)}>
           <div className="flex items-start gap-3 mb-5">
-            <AppIcon name="ui.warning" size={18} className="text-amber-400 shrink-0 mt-0.5" />
+            <AppIcon name="ui.warning" size={18} className="text-warning shrink-0 mt-0.5" />
             {deleteTarget.refCount > 0 ? (
               <p className={`type-secondary ${theme.subtext}`}>
                 <strong>{deleteTarget.account.name}</strong> is referenced by {deleteTarget.refCount} transaction{deleteTarget.refCount === 1 ? "" : "s"}. Deleting it would leave those transactions pointing at a missing account, so deletion is blocked. Reassign or remove those transactions first.
@@ -217,7 +211,7 @@ export function AccountsPage() {
               {deleteTarget.refCount > 0 ? "Close" : "Cancel"}
             </GhostButton>
             {deleteTarget.refCount === 0 && (
-              <PrimaryButton className="flex-1 justify-center !bg-red-500 hover:!bg-red-600" onClick={confirmDelete}>
+              <PrimaryButton className="flex-1 justify-center !bg-danger hover:!bg-danger/85" onClick={confirmDelete}>
                 Delete Account
               </PrimaryButton>
             )}

@@ -37,7 +37,7 @@ export function BillsPage() {
   const [payAccount, setPayAccount] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [undoTarget, setUndoTarget] = useState(null);
-  const [emiScheduleForId, setEmiScheduleForId] = useState(null); // emi plan id | null
+  const [emiScheduleForId, setEmiScheduleForId] = useState(null);
   const [payError, setPayError] = useState("");
 
   const today = new Date();
@@ -45,11 +45,6 @@ export function BillsPage() {
 
   const sorted = [...data.bills].sort((a, b) => a.dueDay - b.dueDay);
 
-  // EMI Payments — reads from the same emi_plans/emi_installments data the
-  // Transactions page's EMI Schedule modal already uses (see App.jsx);
-  // nothing here creates, converts, or duplicates any EMI or transaction
-  // record. Only 'Active' plans qualify — Completed/Cancelled/Preclosed
-  // plans have nothing left to pay and are intentionally excluded here.
   const activeEmiRows = (data.emiPlans || [])
     .filter((plan) => plan.status === "Active")
     .map((plan) => {
@@ -112,7 +107,6 @@ export function BillsPage() {
     <div className="space-y-6">
       <div className="flex justify-end">
          <PrimaryButton onClick={() => setModal("new")}>
-          <AppIcon name="ui.add" size={18} />
           Add Bill
         </PrimaryButton>
       </div>
@@ -125,7 +119,6 @@ export function BillsPage() {
             description="Add a recurring bill or subscription to start tracking payments."
             action={
               <PrimaryButton onClick={() => setModal("new")}>
-                <AppIcon name="ui.add" size={18} />
                 Add Bill
               </PrimaryButton>
             }
@@ -138,10 +131,10 @@ export function BillsPage() {
 
             return (
               <div key={b.id} className={`border-b last:border-0 ${theme.rowBorder}`}>
-                {/* -------- Desktop row -------- */}
+
                 <div className="hidden md:flex items-center justify-between px-6 py-5">
                   <div className="flex items-center gap-3 min-w-0">
-                    {/* Current-cycle payment status */}
+
                     <div
                       className={`forge-button w-6 h-6 rounded-full flex items-center justify-center shrink-0   ${
                         b.paid
@@ -153,7 +146,6 @@ export function BillsPage() {
                       {b.paid && <AppIcon name="bills.paid" size={15} />}
                     </div>
 
-                    {/* Brand logo OR semantic bill icon */}
                     {display.kind === "brand" ? (
                       <ServiceLogo provider={display.providerId} size="sm" />
                     ) : (
@@ -164,7 +156,6 @@ export function BillsPage() {
                       />
                     )}
 
-                    {/* Bill information */}
                     <div className="min-w-0">
                       <p className="type-body font-medium truncate">
                         {b.name}
@@ -174,7 +165,7 @@ export function BillsPage() {
                         {b.category} · Due day {b.dueDay}
 
                         {overdue && (
-                          <span className="text-red-500 font-medium">
+                          <span className="text-danger font-medium">
                             {" "}
                             · Overdue
                           </span>
@@ -215,7 +206,6 @@ export function BillsPage() {
                   </div>
                 </div>
 
-                {/* -------- Mobile card -------- */}
                 <div className="md:hidden px-4 py-4">
                   <div className="flex items-start gap-3">
                     {display.kind === "brand" ? (
@@ -230,7 +220,7 @@ export function BillsPage() {
                           <p className="type-body font-medium truncate">{b.name}</p>
                           <p className={`type-small-label mt-0.5 ${theme.subtext}`}>
                             {b.category} · Due day {b.dueDay}
-                            {overdue && <span className="text-red-500 font-medium"> · Overdue</span>}
+                            {overdue && <span className="text-danger font-medium"> · Overdue</span>}
                           </p>
                         </div>
                         <p className="type-body font-semibold shrink-0">{fmt(b.amount)}</p>
@@ -239,7 +229,7 @@ export function BillsPage() {
                       <div className="flex items-center justify-between gap-2 mt-3">
                         <div className="flex items-center gap-1.5">
                           {b.paid ? (
-                            <span className="type-small-label text-emerald-400 flex items-center gap-1">
+                            <span className="type-small-label text-success flex items-center gap-1">
                               <AppIcon name="bills.paid" size={12} /> Paid
                             </span>
                           ) : (
@@ -270,7 +260,6 @@ export function BillsPage() {
         )}
       </Card>
 
-      {/* ================= EMI Payments ================= */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="type-section-title">EMI Payments</h2>
@@ -286,7 +275,7 @@ export function BillsPage() {
           ) : (
             activeEmiRows.map(({ plan, txn, account, paidCount, totalCount, nextDueDate }) => (
               <div key={plan.id} className={`border-b last:border-0 ${theme.rowBorder}`}>
-                {/* -------- Desktop row -------- */}
+
                 <div className="hidden md:flex items-center justify-between px-6 py-5">
                   <div className="flex items-center gap-3 min-w-0">
                     <AppIcon name="ui.emi" size="md" container />
@@ -316,7 +305,6 @@ export function BillsPage() {
                   </div>
                 </div>
 
-                {/* -------- Mobile card -------- */}
                 <div className="md:hidden px-4 py-4">
                   <div className="flex items-start gap-3">
                     <AppIcon name="ui.emi" size="md" container />
@@ -349,7 +337,6 @@ export function BillsPage() {
         </Card>
       </div>
 
-      {/* Add / Edit Bill */}
       {modal && (
         <Modal
           title={modal === "new" ? "Add Bill" : "Edit Bill"}
@@ -362,7 +349,6 @@ export function BillsPage() {
         </Modal>
       )}
 
-      {/* Mark Paid */}
       {payModal && (
         <Modal
           title={`Mark "${payModal.name}" as Paid`}
@@ -396,7 +382,7 @@ export function BillsPage() {
               </div>
             </Field>
 
-            {payError && <p className="type-secondary text-red-500">{payError}</p>}
+            {payError && <p className="type-secondary text-danger">{payError}</p>}
 
             <div className="flex gap-3">
               <GhostButton
@@ -418,7 +404,6 @@ export function BillsPage() {
         </Modal>
       )}
 
-      {/* Undo Payment */}
       {undoTarget && (
         <Modal
           title="Undo Payment"
@@ -452,7 +437,6 @@ export function BillsPage() {
         </Modal>
       )}
 
-      {/* Delete Bill */}
       {deleteTarget && (
         <Modal
           title="Delete Bill"
@@ -494,7 +478,6 @@ export function BillsPage() {
         </Modal>
       )}
 
-      {/* ================= EMI Schedule Modal ================= */}
       {emiScheduleForPlan && (
         <Modal
           title="EMI Schedule"

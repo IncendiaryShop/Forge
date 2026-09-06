@@ -4,25 +4,11 @@ import { NAV, MOBILE_NAV_MORE } from "../utils/constants";
 import { computeBillStatus } from "../utils/billCycle";
 import { AppIcon } from "./AppIcon";
 import { Modal } from "./Modal";
+import GlassCard from "./GlassCard";
 
 const navById = Object.fromEntries(
   NAV.map((item) => [item.id, item])
 );
-
-/* -------------------------------------------------------------------------
-   Mobile bottom navigation — Dashboard | Transactions | Accounts | Recurring | More.
-
-   Responsive behavior:
-   - Outer navigation width follows the available mobile viewport width.
-   - Outer navigation height scales with viewport width.
-   - Five navigation items share the available width equally.
-   - Active pill width is 78% of its navigation slot.
-   - Active pill height fills the navigation height minus 16px.
-   - 8px vertical inset is maintained at every mobile size.
-   - Active pill radius remains fully rounded as its dimensions scale.
-
-   Desktop navigation is unaffected because this component is md:hidden.
-------------------------------------------------------------------------- */
 
 function NavButton({ item, active, onClick, badge }) {
   return (
@@ -42,29 +28,38 @@ function NavButton({ item, active, onClick, badge }) {
         px-1
       "
     >
-      <span
-        className={`
-          relative
-          flex
-          items-center
-          justify-center
-          w-[78%]
-          h-[calc(100%-16px)]
-          rounded-full
-          transition-all
-          duration-200
-          ${
-            active
-              ? "bg-accent text-white"
-              : "text-white/50"
-          }
-        `}
-      >
-        <AppIcon
-          name={item.icon}
-          size={18}
-        />
-      </span>
+      {active ? (
+  <GlassCard
+    className="
+      glass-card--active
+      flex
+      items-center
+      justify-center
+      w-[78%]
+      h-[calc(100%-16px)]
+      rounded-full
+      text-white
+    "
+  >
+    <span className="relative z-10 flex items-center justify-center">
+      <AppIcon name={item.icon} size={18} />
+    </span>
+  </GlassCard>
+) : (
+  <span
+    className="
+      flex
+      items-center
+      justify-center
+      w-[78%]
+      h-[calc(100%-16px)]
+      rounded-full
+      text-white/50
+    "
+  >
+    <AppIcon name={item.icon} size={18} />
+  </span>
+)}
 
       {badge > 0 && !active && (
         <span
@@ -101,6 +96,9 @@ export function MobileNav() {
     setPage,
     signOut,
     data,
+    isDemoMode,
+    resetDemo,
+    onCreateAccount,
   } = useApp();
 
   const [moreOpen, setMoreOpen] = useState(false);
@@ -132,9 +130,7 @@ export function MobileNav() {
 
   return (
     <>
-      {/* -----------------------------------------------------------------
-          Floating mobile navigation
-      ----------------------------------------------------------------- */}
+
       <nav
         className="
           md:hidden
@@ -147,17 +143,6 @@ export function MobileNav() {
       >
         <div className="relative w-full">
 
-          {/* ---------------------------------------------------------------
-              Responsive floating navigation
-
-              Height:
-                clamp(52px, 15vw, 60px)
-
-              This means:
-                - never smaller than 52px
-                - scales with viewport width
-                - never larger than 60px
-          --------------------------------------------------------------- */}
           <div
             className="
               relative
@@ -168,33 +153,30 @@ export function MobileNav() {
               rounded-full
               bg-elevated
               border
-              border-white/[0.06]
+              border-border-subtle
               backdrop-blur-xl
               shadow-[0_12px_32px_-4px_rgba(0,0,0,0.5)]
             "
           >
-            {/* Dashboard */}
+
             <NavButton
               item={navById["dashboard"]}
               active={page === "dashboard"}
               onClick={() => goTo("dashboard")}
             />
 
-            {/* Transactions */}
             <NavButton
               item={navById["transactions"]}
               active={page === "transactions"}
               onClick={() => goTo("transactions")}
             />
 
-            {/* Accounts */}
             <NavButton
               item={navById["accounts"]}
               active={page === "accounts"}
               onClick={() => goTo("accounts")}
             />
 
-            {/* Recurring */}
             <NavButton
               item={navById["bills"]}
               active={page === "bills"}
@@ -202,7 +184,6 @@ export function MobileNav() {
               badge={billsDueSoon}
             />
 
-            {/* More */}
             <button
               type="button"
               onClick={() => setMoreOpen(true)}
@@ -234,7 +215,7 @@ export function MobileNav() {
                   duration-200
                   ${
                     moreIsActive
-                      ? "bg-accent text-white"
+                      ? "bg-accent text-bg"
                       : "text-white/50"
                   }
                 `}
@@ -249,9 +230,6 @@ export function MobileNav() {
         </div>
       </nav>
 
-      {/* -------------------------------------------------------------------
-          More sheet
-      ------------------------------------------------------------------- */}
       {moreOpen && (
         <Modal
           title="More"
@@ -323,7 +301,34 @@ export function MobileNav() {
               );
             })}
 
-            {/* Sign out */}
+            {isDemoMode && (
+              <div className="mt-2 border-t border-border-subtle pt-3.5 space-y-2">
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoreOpen(false);
+                    resetDemo?.();
+                  }}
+                  className="w-full flex items-center justify-center h-11 rounded-[14px] border border-border text-text/80 hover:bg-white/[0.04] transition-colors duration-150"
+                >
+                  <span className="text-[14px] font-medium">Reset Demo</span>
+                </button>
+                {onCreateAccount && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMoreOpen(false);
+                      onCreateAccount();
+                    }}
+                    className="w-full flex items-center justify-center h-11 rounded-[14px] bg-accent text-bg hover:bg-accent-hover transition-colors duration-150"
+                  >
+                    <span className="text-[14px] font-semibold">Create free account</span>
+                  </button>
+                )}
+              </div>
+            )}
+
             {signOut && (
               <button
                 type="button"
@@ -345,7 +350,7 @@ export function MobileNav() {
                   duration-150
                   mt-2
                   border-t
-                  border-white/[0.06]
+                  border-border-subtle
                   pt-3.5
                 "
               >
@@ -355,7 +360,7 @@ export function MobileNav() {
                 />
 
                 <span className="flex-1 text-left text-[15px] font-medium">
-                  Sign out
+                  {isDemoMode ? "Exit Demo" : "Sign out"}
                 </span>
               </button>
             )}

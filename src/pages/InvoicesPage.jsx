@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useApp } from "../context/AppContext";
-import { Card, Badge, PrimaryButton, IconBtn, Modal, EmptyState, Field, Select, GhostButton, TextInput, AppIcon, AccountLogo, DatePicker } from "../components";
+import { Card, Badge, PrimaryButton, IconBtn, Modal, EmptyState, Field, Select, GhostButton, AppIcon, AccountLogo, DatePicker, InvoiceGenerator, InvoiceDetailModal } from "../components";
 import { InvoiceForm } from "../forms/InvoiceForm";
+import { getSignedInvoiceUrl } from "../services/invoiceStorage";
 import { fmt, todayISO } from "../utils/helpers";
 
 const STATUS_STYLES = {
@@ -23,8 +24,10 @@ function getInvoiceInfo(invoice, today) {
 }
 
 export function InvoicesPage() {
-  const { data, theme, deleteInvoice, markInvoicePaid } = useApp();
-  const [modal, setModal] = useState(null); // 'new' | invoice | null
+  const { data, theme, isDemoMode, deleteInvoice, markInvoicePaid } = useApp();
+  const [modal, setModal] = useState(null);
+  const [detailTarget, setDetailTarget] = useState(null);
+  const [generatorTarget, setGeneratorTarget] = useState(null);
   const [payModal, setPayModal] = useState(null);
   const [payAccount, setPayAccount] = useState("");
   const [payDate, setPayDate] = useState("");
@@ -83,6 +86,23 @@ export function InvoicesPage() {
     setPayModal(null);
   };
 
+  const openEdit = (invoice) => {
+    if (invoice.kind === "generated") setGeneratorTarget(invoice);
+    else setModal(invoice);
+  };
+
+  const viewInvoicePdf = async (invoice) => {
+    if (isDemoMode || !invoice.pdfPath) return;
+    const { data: url } = await getSignedInvoiceUrl(invoice.pdfPath, 300);
+    if (url) window.open(url, "_blank", "noopener");
+  };
+
+  const downloadInvoice = async (invoice) => {
+    if (isDemoMode || !invoice.pdfPath) return;
+    const { data: url } = await getSignedInvoiceUrl(invoice.pdfPath, 300, `${invoice.invoiceNumber}.pdf`);
+    if (url) window.open(url, "_blank", "noopener");
+  };
+
   const requestDelete = (invoice) => {
     if (invoice.status === "Paid" && invoice.transactionId) {
       setDeleteTarget(invoice);
@@ -98,10 +118,13 @@ export function InvoicesPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
   <PrimaryButton onClick={() => setModal("new")}>
-    <AppIcon name="ui.add" size={15} /> Add Invoice
+    Add Invoice
   </PrimaryButton>
+  <GhostButton onClick={() => setGeneratorTarget("new")}>
+    Generate Invoice
+  </GhostButton>
 </div>
 
       <Card className="overflow-hidden">
@@ -134,13 +157,13 @@ export function InvoicesPage() {
           <EmptyState icon={(p) => <AppIcon name="invoiceStates.invoice" {...p} />} title="No invoices yet" subtitle="Add your first invoice to start tracking payments" />
         ) : (
           <>
-          {/* -------- Mobile cards -------- */}
+
           <div className="md:hidden divide-y divide-white/[0.06]">
             {sorted.map(({ inv, info }) => (
               <div key={inv.id} className="px-4 py-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="type-body font-medium truncate">{inv.invoiceNumber}</p>
+                    <button type="button" onClick={() => setDetailTarget(inv)} className="type-body font-medium truncate text-left hover:underline">{inv.invoiceNumber}</button>
                     <p className={`type-small-label mt-0.5 truncate ${theme.subtext}`}>{inv.client}</p>
                   </div>
                   <p className="type-body font-semibold shrink-0">{fmt(inv.amount)}</p>
@@ -166,32 +189,35 @@ export function InvoicesPage() {
                   {inv.status !== "Paid" && (
                     <IconBtn icon="invoiceStates.payment" onClick={() => openPayModal(inv)} title="Mark Paid" />
                   )}
-                  <IconBtn icon="ui.edit" onClick={() => setModal(inv)} title="Edit" />
+                  {inv.pdfPath && <IconBtn icon="ui.view" onClick={() => viewInvoicePdf(inv)} title="View PDF" />}
+                  {inv.pdfPath && !isDemoMode && <IconBtn icon="ui.download" onClick={() => downloadInvoice(inv)} title="Download PDF" />}
+                  <IconBtn icon="ui.edit" onClick={() => openEdit(inv)} title="Edit" />
                   <IconBtn icon="ui.delete" danger onClick={() => requestDelete(inv)} title="Delete" />
                 </div>
               </div>
             ))}
           </div>
 
-          {/* -------- Desktop table -------- */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-base">
               <thead>
-                <tr className={`type-small-label text-left text-white uppercase ${theme.tableHeader} border-b ${theme.rowBorder}`}>
-                  <th className="px-6 py-4">Invoice</th>
-                  <th className="px-6 py-4 ">Client</th>
-                  <th className="px-6 py-4">Invoice Date</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Payment Date</th>
-                  <th className="px-6 py-4">Payment Account</th>
-                  <th className="px-6 py-4 text-right">Amount</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                <tr className="type-small-label text-left uppercase bg-elevated text-text">
+                  <th className="px-6 py-3.5">Invoice</th>
+                  <th className="px-6 py-3.5">Client</th>
+                  <th className="px-6 py-3.5">Invoice Date</th>
+                  <th className="px-6 py-3.5">Status</th>
+                  <th className="px-6 py-3.5">Payment Date</th>
+                  <th className="px-6 py-3.5">Payment Account</th>
+                  <th className="px-6 py-3.5 text-right">Amount</th>
+                  <th className="px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-[#0c0c0c]">
+              <tbody className="bg-content">
                 {sorted.map(({ inv, info }) => (
                   <tr key={inv.id} className={`forge-row border-b last:border-0 ${theme.rowBorder}`}>
-                    <td className="type-body px-6 py-4 font-medium whitespace-nowrap">{inv.invoiceNumber}</td>
+                    <td className="type-body px-6 py-4 font-medium whitespace-nowrap">
+                      <button type="button" onClick={() => setDetailTarget(inv)} className="hover:underline text-left">{inv.invoiceNumber}</button>
+                    </td>
                     <td className="px-6 py-4">{inv.client}</td>
                     <td className={`type-small-label px-6 py-4 whitespace-nowrap ${theme.subtext}`}>{inv.invoiceDate}</td>
                     <td className="px-6 py-4">
@@ -206,7 +232,9 @@ export function InvoicesPage() {
                         {inv.status !== "Paid" && (
                           <IconBtn icon="invoiceStates.payment" onClick={() => openPayModal(inv)} title="Mark Paid" />
                         )}
-                        <IconBtn icon="ui.edit" onClick={() => setModal(inv)} title="Edit" />
+                        {inv.pdfPath && <IconBtn icon="ui.view" onClick={() => viewInvoicePdf(inv)} title="View PDF" />}
+                  {inv.pdfPath && !isDemoMode && <IconBtn icon="ui.download" onClick={() => downloadInvoice(inv)} title="Download PDF" />}
+                        <IconBtn icon="ui.edit" onClick={() => openEdit(inv)} title="Edit" />
                         <IconBtn icon="ui.delete" danger onClick={() => requestDelete(inv)} title="Delete" />
                       </div>
                     </td>
@@ -219,10 +247,25 @@ export function InvoicesPage() {
         )}
       </Card>
 
+      {detailTarget && (
+        <InvoiceDetailModal
+          invoice={detailTarget}
+          onClose={() => setDetailTarget(null)}
+          onEdit={() => {
+            openEdit(detailTarget);
+            setDetailTarget(null);
+          }}
+        />
+      )}
+
       {modal && (
         <Modal title={modal === "new" ? "Add Invoice" : "Edit Invoice"} onClose={() => setModal(null)}>
           <InvoiceForm existing={modal === "new" ? null : modal} onDone={() => setModal(null)} />
         </Modal>
+      )}
+
+      {generatorTarget && (
+        <InvoiceGenerator existing={generatorTarget === "new" ? null : generatorTarget} onClose={() => setGeneratorTarget(null)} />
       )}
 
       {payModal && (

@@ -1,4 +1,4 @@
-/* ----------------------------- constants ----------------------------- */
+
 
 export const INCOME_CATEGORIES = [
   "Salary",
@@ -43,12 +43,12 @@ export const ACCOUNT_TYPES = [
 ];
 
 export const CHART_COLORS = [
-  "#60269d",
-  "#7344b1",
-  "#8660c4",
-  "#9a7cd7",
-  "#af98e9",
-  "#c5b4fb",
+  "#3f3f47",
+  "#52525c",
+  "#71717b",
+  "#9f9fa9",
+  "#d4d4d8",
+  "#e4e4e7",
 ];
 
 export const STORAGE_KEY = "finance-tracker-data-v1";
@@ -72,10 +72,6 @@ export const PAGE_TITLES = {
   invoices: "Invoices",
   goals: "Savings Goals",
 };
-
-// Mobile bottom navigation is intentionally shallower than the desktop
-// sidebar: Home | Transactions | Accounts | Recurring | More. Everything
-// else (plus Sign out) lives behind the "More" sheet — see MobileNav.jsx.
 
 export const MOBILE_NAV_PRIMARY = [
   "dashboard",

@@ -33,11 +33,7 @@ export function AccountForm({ onDone, existing }) {
     : false;
 
 const openingOutstandingLocked = isCreditCard && !!existing && hasTransactions;
-// Once a loan has been disbursed, its terms are locked — the generated
-// schedule already reflects the original principal/rate/tenure/start date,
-// and silently changing them would leave the schedule inconsistent with
-// what's on the account. Safe fields (EMI display, provider/name via type
-// change) aren't part of this lock; only the amortization inputs are.
+
 const loanTermsLocked = isLoan && !!existing && hasLoanSchedule;
 
   const suggestedEmi = isLoan && form.opening && form.loanTenureMonths
@@ -205,7 +201,7 @@ const loanTermsLocked = isLoan && !!existing && hasLoanSchedule;
           </Field>
         </>
       )}
-      {error && <p className="type-secondary text-red-500">{error}</p>}
+      {error && <p className="type-secondary text-danger">{error}</p>}
       <PrimaryButton type="submit" className="w-full justify-center mt-2">{existing ? "Save Changes" : "Add Account"}</PrimaryButton>
     </form>
   );

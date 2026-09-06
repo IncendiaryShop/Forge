@@ -100,7 +100,7 @@ export function EmiConvertForm({ transaction, onDone }) {
         </div>
       </div>
 
-      {error && <p className="type-secondary text-red-500">{error}</p>}
+      {error && <p className="type-secondary text-danger">{error}</p>}
 
       <div className="flex items-center gap-3">
         <GhostButton type="button" className="flex-1 justify-center" onClick={onDone}>Cancel</GhostButton>

@@ -103,8 +103,8 @@ void main() {
 const ctxMap = new WeakMap();
 
 const MoltenMetal = ({
-  color1 = '#5227FF',
-  color2 = '#FF9FFC',
+  color1 = '#09090b',
+  color2 = '#9f9fa9',
   color3 = '#FFFFFF',
   speed = 0.35,
   scale = 4,
@@ -257,8 +257,8 @@ const MoltenMetal = ({
       ctxMap.delete(container);
       try {
         container.removeChild(canvas);
-      } catch {
-        // canvas already detached (e.g. container unmounted first) — safe to ignore
+      } catch (err) {
+        void err;
       }
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };

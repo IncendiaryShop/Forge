@@ -61,20 +61,11 @@ void main() {
 }
 `;
 
-/**
- * Drives the React Bits "SpecularButton" rim-light shader on an arbitrary
- * element pair (host element + fx mount node), so the same effect can be
- * reused on buttons, cards, or any other surface — not just <SpecularButton>.
- *
- * @param {React.RefObject<HTMLElement>} elRef  element whose border defines the SDF shape
- * @param {React.RefObject<HTMLElement>} fxRef  empty element the WebGL canvas mounts into
- * @param {object} options
- */
 export function useSpecularEffect(elRef, fxRef, options = {}) {
   const {
     radius = 18,
     lineColor = "#ffffff",
-    baseColor = "#525252",
+    baseColor = "#52525c",
     intensity = 1,
     shineSize = 10,
     shineFade = 40,
@@ -87,7 +78,9 @@ export function useSpecularEffect(elRef, fxRef, options = {}) {
   } = options;
 
   const propsRef = useRef({});
-  propsRef.current = { radius, lineColor, baseColor, intensity, shineSize, shineFade, thickness, speed, followMouse, proximity, autoAnimate };
+  useEffect(() => {
+    propsRef.current = { radius, lineColor, baseColor, intensity, shineSize, shineFade, thickness, speed, followMouse, proximity, autoAnimate };
+  });
 
   useEffect(() => {
     const el = elRef.current;
@@ -207,5 +200,5 @@ export function useSpecularEffect(elRef, fxRef, options = {}) {
       if (gl.canvas.parentNode === fx) fx.removeChild(gl.canvas);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [disabled]);
+  }, [disabled, elRef, fxRef]);
 }

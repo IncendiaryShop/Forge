@@ -1,7 +1,5 @@
 import { uid } from "./helpers";
 
-/* ------------------------------ seed data ------------------------------ */
-
 export function seedData() {
   const accounts = [
     { id: "acc-bank", name: "HDFC Bank", type: "Bank", opening: 42000 },
@@ -50,8 +48,6 @@ export function seedData() {
 
   const budgets = { Food: 6000, Groceries: 7000, Transportation: 3000, Shopping: 4000, Entertainment: 2500, Utilities: 4500, Fuel: 2000 };
 
-  // Matching income transaction for the seeded "Paid" invoice below (INV-2026-008),
-  // so account balances and dashboard totals stay consistent with its Paid status.
   const paidInvoiceTxnId = uid();
   const paidInvoicePaymentDate = new Date(new Date(now).setDate(now.getDate() - 12)).toISOString().slice(0, 10);
   txns.push({
@@ -65,7 +61,6 @@ export function seedData() {
     amount: 9000,
     createdAt: new Date().toISOString(),
   });
-
 
   const bills = [
   {

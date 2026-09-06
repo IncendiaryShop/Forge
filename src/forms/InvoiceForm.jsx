@@ -49,7 +49,7 @@ export function InvoiceForm({ onDone, existing }) {
           <TextInput type="number" min="0.01" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required disabled={isPaid} />
         </Field>
       </div>
-      {error && <p className="type-secondary text-red-500">{error}</p>}
+      {error && <p className="type-secondary text-danger">{error}</p>}
       <PrimaryButton type="submit" className="w-full justify-center mt-2">{existing ? "Save Changes" : "Add Invoice"}</PrimaryButton>
     </form>
   );

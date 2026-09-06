@@ -1,8 +1,4 @@
-// Shared helper for every service module. Supabase errors carry technical
-// detail (constraint names, internal codes) that shouldn't reach end users of
-// a financial app — this maps them to a short, safe message, while logging
-// the raw error to the console in development only (section 10 of the
-// migration brief).
+
 
 const FRIENDLY = {
   23505: "That already exists.",
@@ -19,9 +15,6 @@ export function toUserMessage(error, fallback) {
   return FRIENDLY[error.code] || fallback || "Something went wrong. Please try again.";
 }
 
-// Wraps a Supabase call, logging the raw error in dev and always returning
-// { data, error } — error is either null or { message, raw } where `message`
-// is safe to show in the UI. Never throws.
 export async function call(promise, fallbackMessage) {
   try {
     const { data, error } = await promise;

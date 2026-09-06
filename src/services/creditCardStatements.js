@@ -20,11 +20,6 @@ export async function listCreditCardStatements() {
   return { data: data ? data.map(fromRow) : null, error };
 }
 
-// Freezes the account's CURRENT Outstanding into a statement row for the
-// given billing cycle, via the generate_statement() RPC — atomic, and
-// rejects (via the DB's own unique constraint + an explicit check inside the
-// function) if a statement for this cycle already exists. Never touches
-// accounts/transactions/Outstanding; this is a billing record only.
 export async function generateStatement(accountId, cycleKey, statementDate, dueDate) {
   const { data, error } = await call(
     supabase.rpc("generate_statement", {

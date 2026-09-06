@@ -6,9 +6,9 @@ const fromRow = (r) => ({
   id: r.id,
   transactionId: r.transaction_id,
   accountId: r.account_id,
-  // Optional name retained for compatibility with existing EMI records.
+
   name: r.name,
-  // Source is retained for compatibility with existing EMI records.
+
   source: r.source,
   principal: Number(r.principal),
   interestRate: Number(r.interest_rate),
@@ -22,11 +22,6 @@ const fromRow = (r) => ({
 });
 export { fromRow as mapEmiPlanRow };
 
-// Local mirror of emiInstallments.js's row mapper, kept private to this file.
-// create_emi_plan() returns the freshly generated installment schedule inline
-// alongside the plan — parsing it here (rather than importing across the two
-// EMI service modules) avoids a circular import between emiPlans.js and
-// emiInstallments.js, since the latter needs the reverse mapper too.
 const fromInstallmentRow = (r) => ({
   id: r.id,
   emiPlanId: r.emi_plan_id,
@@ -47,14 +42,6 @@ export async function listEmiPlans() {
   return { data: data ? data.map(fromRow) : null, error };
 }
 
-// Converts a transaction to EMI via the create_emi_plan() RPC — atomic:
-// validates ownership/type/account, inserts the plan, and generates its full
-// installment schedule in one database transaction. See supabase/schema.sql
-// for the full validation this performs server-side (never trust only the
-// client-side checks in EmiConvertForm). The EMI math itself (emiAmount /
-// totalInterest / totalPayable) is computed client-side (utils/emi.js) and
-// passed straight through, so the created plan always matches exactly what
-// the user saw in the conversion modal.
 export async function createEmiPlan(userId, plan) {
   const { data, error } = await call(
     supabase.rpc("create_emi_plan", {
@@ -80,13 +67,6 @@ export async function createEmiPlan(userId, plan) {
   };
 }
 
-// Deleting a plan cascades to its installments at the database level
-// (emi_installments.emi_plan_id -> emi_plans(id) ON DELETE CASCADE) — never
-// leaves an orphaned installment row. Any installment that had already been
-// paid keeps its payment Transfer transaction untouched (that FK points the
-// other way, installments -> transactions, and is ON DELETE SET NULL on the
-// transactions side) — deleting a plan never deletes real transaction
-// history, only the plan/schedule bookkeeping on top of it.
 export async function deleteEmiPlan(id) {
   const { error } = await call(
     supabase.from("emi_plans").delete().eq("id", id),
@@ -95,16 +75,6 @@ export async function deleteEmiPlan(id) {
   return { error };
 }
 
-// Pre-closes an Active plan via the preclose_emi_plan() RPC — atomic:
-// settles every remaining (not-yet-Paid) installment in one Transfer from
-// `sourceAccountId` to the plan's Credit Card, marks those installments Paid
-// (flagged settledViaPreclosure so the normal per-installment Undo refuses to
-// touch them — they share one settlement transaction), and moves the plan to
-// 'Preclosed' — a terminal status distinct from 'Completed' (reached by
-// paying every installment individually) and from 'Cancelled' (an abandoned
-// EMI). Already-Paid installments are left untouched. See supabase/schema.sql
-// for the full server-side validation — never trust only the client-side
-// checks in EmiSchedule.jsx.
 export async function precloseEmiPlan(planId, sourceAccountId, date, description) {
   const { data, error } = await call(
     supabase.rpc("preclose_emi_plan", {

@@ -4,24 +4,6 @@ import { useApp } from "../context/AppContext";
 import { AppIcon } from "./AppIcon";
 import { todayISO } from "../utils/helpers";
 
-/* -------------------------------------------------------------------------
-   <DatePicker /> — a Forge-themed replacement for native
-   `<input type="date" />` fields.
-
-   Drop-in compatible with the existing TextInput-based date fields: it
-   takes the same `value` ("YYYY-MM-DD" string) and `onChange` props, and
-   calls onChange with a `{ target: { value } }` shape so every existing
-   call site (`(e) => setForm({ ...form, date: e.target.value })`) keeps
-   working completely unchanged. No form state, validation, or submission
-   logic is touched by swapping the input mechanism.
-
-   The calendar itself is rendered through a portal into document.body as
-   a small centered "sheet", mirroring the existing <Modal /> overlay
-   pattern (dark scrim, click-outside-to-close, Escape-to-close) so it
-   can never be clipped by a scrollable parent modal and always sits
-   above it (z-[70] vs Modal's z-50).
-------------------------------------------------------------------------- */
-
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
 const MONTH_NAMES = [
@@ -52,9 +34,6 @@ function formatDisplay(str) {
   });
 }
 
-// 6 full weeks (42 cells) starting on the Sunday on/before the 1st of the
-// month, so the grid always includes the leading/trailing days needed to
-// fill the week rows.
 function buildMonthGrid(year, month) {
   const firstOfMonth = new Date(year, month, 1);
   const gridStart = new Date(year, month, 1 - firstOfMonth.getDay());
@@ -203,7 +182,7 @@ export function DatePicker({ value, onChange, required, disabled, className = ""
                       aspect-square rounded-[10px] text-[13px] flex items-center justify-center
                       transition-colors duration-150
                       ${isSelected
-                        ? "bg-accent text-[#171717] font-semibold"
+                        ? "bg-accent text-bg font-semibold"
                         : inMonth
                           ? `text-text ${theme.hover}`
                           : `${theme.faint} ${theme.hover}`}

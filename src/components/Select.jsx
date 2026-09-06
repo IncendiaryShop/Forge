@@ -3,31 +3,11 @@ import { createPortal } from "react-dom";
 import { useApp } from "../context/AppContext";
 import { AppIcon } from "./AppIcon";
 
-/* -------------------------------------------------------------------------
-   <Select /> — Forge-themed replacement for native `<select>` / `<option>`.
-
-   Drop-in compatible with every existing call site: it still takes
-   `value` + `onChange` (called with `{ target: { value } }`, always a
-   string, exactly like a native <select>'s change event) and builds its
-   option list from ordinary `<option>` / `<optgroup>` children, so
-   nothing that builds those children needs to change.
-
-   The options panel is rendered through a portal into document.body,
-   anchored under (or, near the bottom of the viewport, above) the
-   trigger, and layered above <Modal /> (z-[70], the same convention
-   already used by <DatePicker />) so it is never clipped by a
-   scrollable modal/card and behaves identically on a page or inside a
-   form sheet.
-------------------------------------------------------------------------- */
-
 function optionFromElement(el) {
   const value = el.props.value !== undefined ? el.props.value : el.props.children;
   return { kind: "option", value, label: el.props.children, disabled: !!el.props.disabled };
 }
 
-// Flattens <option>/<optgroup> children into a render list, ignoring
-// anything else (conditional `false`/`null` children React already
-// strips, stray whitespace, etc).
 function flattenOptions(children) {
   const items = [];
   Children.forEach(children, (child) => {
@@ -86,25 +66,8 @@ export function Select({
     const spaceAbove = rect.top;
     const openUp = spaceBelow < MENU_MIN_HEIGHT + MENU_GAP && spaceAbove > spaceBelow;
 
-    // The panel is never narrower than the trigger (matches it exactly
-    // when the trigger is already wide enough, e.g. most desktop
-    // layouts) but is allowed to grow up to `maxWidth` so a longer
-    // option label — on a narrow mobile trigger or a compact
-    // "w-auto" filter — never gets clipped.
     const maxWidth = Math.max(rect.width, Math.min(360, viewportW - MENU_VIEWPORT_MARGIN * 2));
 
-    // Prefer anchoring to the trigger's left edge — this matches the
-    // trigger exactly when the panel's content fits, and grows
-    // rightward otherwise. Only when that would push the panel past
-    // the right edge of the viewport do we anchor to the trigger's
-    // *right* edge instead — and we do that with the `right` CSS
-    // property (not a computed `left` derived from `maxWidth`), so the
-    // panel's right edge lines up with the trigger regardless of how
-    // wide the panel's actual, content-driven width ends up being.
-    // (Using a `left` shifted by the full `maxWidth` was the bug: for a
-    // narrow trigger near the right edge of the screen it yanked the
-    // whole panel far away from the trigger, since `maxWidth` can be up
-    // to 360px even when the real content is much narrower.)
     const overflowsRight = rect.left + maxWidth > viewportW - MENU_VIEWPORT_MARGIN;
     const horizontal = overflowsRight
       ? { right: Math.max(MENU_VIEWPORT_MARGIN, viewportW - rect.right) }
@@ -143,9 +106,6 @@ export function Select({
       close();
     };
 
-    // Capture phase so this also catches scrolling inside a nested
-    // scrollable ancestor (e.g. a <Modal />'s own overflow-y-auto body),
-    // since plain "scroll" events don't bubble.
     window.addEventListener("scroll", onScrollOrResize, true);
     window.addEventListener("resize", onScrollOrResize);
     document.addEventListener("pointerdown", onPointerDown);
@@ -270,9 +230,7 @@ export function Select({
                   ${isSelected ? "text-accent font-medium" : "text-text"}
                 `}
               >
-                {/* Wraps instead of truncating — the panel is sized (see
-                    `reposition`) so it's never narrower than needed for
-                    this text on either desktop or mobile. */}
+
                 <span className="break-words">{it.label}</span>
                 {isSelected && <AppIcon name="ui.check" size={11} className="shrink-0 text-accent" />}
               </div>

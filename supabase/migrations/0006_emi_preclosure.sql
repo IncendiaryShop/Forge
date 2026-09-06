@@ -1,25 +1,3 @@
--- ============================================================================
--- Phase 8 — EMI Management / Pre-Closure.
--- Adds preclose_emi_plan(): settles every remaining (not-yet-Paid)
--- installment on an Active EMI plan in a single Transfer transaction, same
--- mechanism/semantics as pay_emi_installment() (Source Bank/Cash -> Credit
--- Card), then marks the plan 'Cancelled' — a distinct terminal status from
--- the plan's existing 'Completed' (reached by paying every installment
--- individually), so a pre-closed plan stays distinguishable from a
--- naturally-completed one in history. No schema change: 'Cancelled' was
--- already part of emi_plans' status check constraint from Phase 2 and was
--- simply never used until now.
---
--- Applies the exact same Phase 3 (Bank/Cash insufficient-funds) and Phase 4
--- (payment can't exceed Credit Card outstanding) server-side checks as
--- pay_emi_installment's Phase 6 hardening, computed identically — this is
--- the security/integrity boundary; the frontend's own checks
--- (EmiSchedule.jsx) are only for immediate user feedback, exactly as with
--- individual installment payments.
---
--- Idempotent: safe to re-run.
--- ============================================================================
-
 create or replace function public.preclose_emi_plan(
   p_plan_id uuid,
   p_source_account_id uuid,
@@ -74,8 +52,6 @@ begin
     raise exception 'Credit Card account not found or not owned by the current user';
   end if;
 
-  -- Phase 3: Bank/Cash insufficient-funds check — identical formula to
-  -- pay_emi_installment()'s hardening / accountBalance() in App.jsx.
   if v_source.type <> 'Credit Card' then
     select coalesce(v_source.opening, 0)
       + coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = p_source_account_id), 0)
@@ -91,8 +67,6 @@ begin
     end if;
   end if;
 
-  -- Phase 4: Credit Card outstanding check — identical formula to
-  -- pay_emi_installment()'s hardening / accountOutstanding() in App.jsx.
   select coalesce(v_card.opening, 0)
     + coalesce(sum(t.amount) filter (where t.type = 'Expense' and t.account_id = v_plan.account_id), 0)
     - coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = v_plan.account_id), 0)
@@ -113,9 +87,6 @@ begin
   values (v_user_id, p_date, 'Transfer', 'EMI', coalesce(p_description, 'EMI pre-closure'), p_source_account_id, v_plan.account_id, v_remaining_amount)
   returning * into v_txn;
 
-  -- Only rows that weren't already Paid are touched — a previously-paid
-  -- installment's status/paid_date/payment_transaction_id is left exactly as
-  -- it was, so paid history never gets rewritten or double-counted.
   update public.emi_installments
   set status = 'Paid', paid_date = p_date, payment_transaction_id = v_txn.id
   where emi_plan_id = v_plan.id and user_id = v_user_id and status <> 'Paid';

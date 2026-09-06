@@ -1,23 +1,3 @@
--- ============================================================================
--- Phase 9 — Loan Account + Loan Schedule + Normal Loan EMI.
---
--- A Loan is a SEPARATE liability account type, distinct from Credit Card EMI
--- (Phases 1-8, untouched by this migration). It reuses the `accounts` table
--- (same pattern as Credit Card's credit_limit/statement_date/payment_due_date
--- columns) plus a new `loan_installments` table for its amortization
--- schedule, and `opening` doubles as the loan's ORIGINAL PRINCIPAL — same
--- "reuse `opening` for the type-specific opening figure" convention Credit
--- Card already established for opening outstanding.
---
--- Outstanding Principal is intentionally NOT a stored column: it's derived
--- the same way accountOutstanding() derives Credit Card outstanding —
--- `opening` (original principal) minus every principal-component Transfer
--- transaction recorded against this loan account. One source of truth, no
--- second balance system.
---
--- Idempotent: safe to re-run.
--- ============================================================================
-
 alter table public.accounts
   add column if not exists loan_interest_rate numeric(6, 3) check (loan_interest_rate is null or loan_interest_rate >= 0),
   add column if not exists loan_tenure_months int check (loan_tenure_months is null or loan_tenure_months > 0),
@@ -25,15 +5,6 @@ alter table public.accounts
   add column if not exists loan_start_date date,
   add column if not exists loan_status text check (loan_status is null or loan_status in ('Active', 'Completed'));
 
--- ----------------------------------------------------------------------------
--- loan_installments
--- One row per amortization-schedule entry for a Loan account. Deliberately a
--- SEPARATE table from emi_installments (Credit Card EMI, Phase 2) — Loan and
--- Credit Card EMI are different liabilities with different accounting
--- (principal/interest split here vs a single blended amount there), and
--- coupling them into one table/RPC would conflate two systems the brief
--- explicitly requires stay separate.
--- ----------------------------------------------------------------------------
 create table if not exists public.loan_installments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -88,25 +59,6 @@ exception when undefined_object then
   create publication supabase_realtime for table public.loan_installments;
 end $$;
 
--- ============================================================================
--- disburse_loan — atomic loan disbursement + schedule generation.
---
--- Records disbursement as a Transfer FROM the loan account TO the receiving
--- Bank/Cash account (loan.opening = original principal moves out of the
--- loan "account" conceptually and into the bank) — this is what correctly
--- increases the bank's balance via the EXISTING, unmodified accountBalance()
--- Transfer branch, with NO new transaction type and NO Income created. The
--- loan account's own generic accountBalance()/accountOutstanding() values are
--- never read/displayed anywhere in the UI for a Loan — Outstanding Principal
--- is derived separately (see accounts.js / App.jsx loanOutstandingPrincipal),
--- so this Transfer's effect on the loan "account" itself is inert.
---
--- The amortization schedule itself is computed client-side (utils/
--- loanAmortization.js, same "trust client math, validate the total"
--- precedent as create_emi_plan for Credit Card EMI) and passed in as jsonb;
--- this function only validates it sums to the account's principal before
--- committing, then bulk-inserts it.
--- ============================================================================
 create or replace function public.disburse_loan(
   p_account_id uuid,
   p_destination_account_id uuid,
@@ -197,26 +149,6 @@ $$;
 revoke all on function public.disburse_loan(uuid, uuid, date, jsonb, text) from public;
 grant execute on function public.disburse_loan(uuid, uuid, date, jsonb, text) to authenticated;
 
--- ============================================================================
--- pay_loan_installment — atomic normal loan EMI payment.
---
--- Splits the EMI into its two accounting effects, both via ordinary
--- transactions (never a direct balance mutation):
---   - interest_component (if > 0) -> an Expense on the source account
---     (category 'Loan Interest') — real spending, shows up in Dashboard/
---     budget/category totals exactly like any other Expense.
---   - principal_component -> a Transfer from the source account to the loan
---     account — reduces the source's balance and (via the loan's derived
---     Outstanding Principal formula) reduces what's owed, without ever
---     touching Credit Card outstanding/limit logic.
--- Together they debit the source by exactly emi_amount, matching Forge's
--- "derive everything from transactions" architecture with no new concepts.
---
--- Applies the same Phase 3-style Bank/Cash insufficient-funds check as
--- pay_emi_installment()/preclose_emi_plan() (Phase 6 precedent), computed
--- identically, and completes the loan (loan_status = 'Completed') once no
--- Upcoming installments remain.
--- ============================================================================
 create or replace function public.pay_loan_installment(
   p_installment_id uuid,
   p_source_account_id uuid,
@@ -271,8 +203,6 @@ begin
     raise exception 'Loan EMIs can only be paid from a Bank or Cash account';
   end if;
 
-  -- Phase 3: Bank/Cash insufficient-funds check — identical formula to
-  -- accountBalance() in App.jsx / pay_emi_installment's Phase 6 hardening.
   select coalesce(v_source.opening, 0)
     + coalesce(sum(t.amount) filter (where t.type = 'Income' and t.account_id = p_source_account_id), 0)
     - coalesce(sum(t.amount) filter (where t.type = 'Expense' and t.account_id = p_source_account_id), 0)

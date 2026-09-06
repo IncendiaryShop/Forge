@@ -16,52 +16,52 @@ import { fmt, monthKey, todayISO } from "../utils/helpers";
 const CATEGORY_STYLES = {
   Food: {
     icon: "categories.food",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/15",
-    border: "border-emerald-500/20",
-    progress: "bg-emerald-500",
+    color: "text-text",
+    bg: "bg-white/[0.16]",
+    border: "border-white/[0.22]",
+    progress: "bg-accent",
   },
   Groceries: {
     icon: "categories.groceries",
-    color: "text-amber-400",
-    bg: "bg-amber-500/15",
-    border: "border-amber-500/20",
-    progress: "bg-amber-500",
+    color: "text-text",
+    bg: "bg-white/[0.13]",
+    border: "border-white/[0.18]",
+    progress: "bg-accent",
   },
   Transportation: {
     icon: "categories.transportation",
-    color: "text-blue-400",
-    bg: "bg-blue-500/15",
-    border: "border-blue-500/20",
-    progress: "bg-blue-500",
+    color: "text-text",
+    bg: "bg-white/10",
+    border: "border-border-hover",
+    progress: "bg-accent",
   },
   Shopping: {
     icon: "categories.shopping",
-    color: "text-pink-400",
-    bg: "bg-pink-500/15",
-    border: "border-pink-500/20",
-    progress: "bg-pink-500",
+    color: "text-text",
+    bg: "bg-white/[0.08]",
+    border: "border-white/[0.12]",
+    progress: "bg-accent",
   },
   Entertainment: {
     icon: "categories.entertainment",
-    color: "text-violet-400",
-    bg: "bg-violet-500/15",
-    border: "border-violet-500/20",
-    progress: "bg-violet-500",
+    color: "text-text",
+    bg: "bg-white/[0.06]",
+    border: "border-border",
+    progress: "bg-accent",
   },
   Utilities: {
     icon: "categories.utilities",
-    color: "text-yellow-400",
-    bg: "bg-yellow-500/15",
-    border: "border-yellow-500/20",
-    progress: "bg-yellow-500",
+    color: "text-text",
+    bg: "bg-white/[0.05]",
+    border: "border-border",
+    progress: "bg-accent",
   },
   Fuel: {
     icon: "categories.fuel",
-    color: "text-red-400",
-    bg: "bg-red-500/15",
-    border: "border-red-500/20",
-    progress: "bg-red-500",
+    color: "text-text",
+    bg: "bg-accent/15",
+    border: "border-accent/20",
+    progress: "bg-accent",
   },
 };
 
@@ -110,14 +110,13 @@ export function BudgetPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
+
       <div className="flex justify-end w-full">
   <PrimaryButton onClick={() => setModal("new")}>
     Set Budget
   </PrimaryButton>
 </div>
 
-      {/* Total Budget */}
       <Card className="p-5 sm:p-6 w-full">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
           <div className="min-w-0">
@@ -161,13 +160,12 @@ export function BudgetPage() {
           <ProgressBar
             pct={totalPct}
             colorClass={
-              totalSpent > totalBudget ? "bg-red-500" : "bg-accent"
+              totalSpent > totalBudget ? "bg-danger" : "bg-accent"
             }
           />
         </div>
       </Card>
 
-      {/* Category Budgets */}
       {rows.length === 0 ? (
         <Card className="p-7">
           <EmptyState
@@ -186,9 +184,9 @@ export function BudgetPage() {
               CATEGORY_STYLES[r.category] || FALLBACK_STYLE;
 
             const progressColor = over
-              ? "bg-red-500"
+              ? "bg-danger"
               : r.pct > 80
-                ? "bg-amber-500"
+                ? "bg-warning"
                 : style.progress;
 
             const remaining = Math.max(r.amount - r.spent, 0);
@@ -196,9 +194,9 @@ export function BudgetPage() {
             return (
               <Card
                 key={r.category}
-                className="p-5 group transition-all duration-200 hover:border-white/10"
+                className="p-5 group transition-all duration-200 hover:border-border"
               >
-                {/* Category Header */}
+
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
@@ -227,7 +225,7 @@ export function BudgetPage() {
                   <div className="flex items-center gap-1 shrink-0">
                     <span
                       className={`px-2.5 py-1 rounded-lg bg-white/[0.06] text-xs font-semibold ${
-                        over ? "text-red-400" : ""
+                        over ? "text-danger" : ""
                       }`}
                     >
                       {Math.round(r.pct)}%
@@ -255,7 +253,6 @@ export function BudgetPage() {
                   </div>
                 </div>
 
-                {/* Progress */}
                 <div className="mt-5">
                   <ProgressBar
                     pct={r.pct}
@@ -263,11 +260,10 @@ export function BudgetPage() {
                   />
                 </div>
 
-                {/* Bottom Stats */}
                 <div className="flex items-center justify-between mt-3">
                   <p
                     className={`type-secondary font-medium ${
-                      over ? "text-red-400" : style.color
+                      over ? "text-danger" : style.color
                     }`}
                   >
                     {over
@@ -287,7 +283,6 @@ export function BudgetPage() {
         </div>
       )}
 
-      {/* Add/Edit Budget */}
       {modal && (
         <Modal
           title={
@@ -305,7 +300,6 @@ export function BudgetPage() {
         </Modal>
       )}
 
-      {/* Delete Confirmation */}
       {deleteTarget && (
         <Modal
           title="Delete Budget"
@@ -315,7 +309,7 @@ export function BudgetPage() {
             <AppIcon
               name="ui.warning"
               size={18}
-              className="text-amber-400 shrink-0 mt-0.5"
+              className="text-warning shrink-0 mt-0.5"
             />
 
             <p className={`type-secondary ${theme.subtext}`}>
@@ -334,7 +328,7 @@ export function BudgetPage() {
             </GhostButton>
 
             <PrimaryButton
-              className="flex-1 justify-center !bg-red-500 hover:!bg-red-600"
+              className="flex-1 justify-center !bg-danger hover:!bg-danger/85"
               onClick={confirmDelete}
             >
               Delete Budget

@@ -1,18 +1,6 @@
 import { getBank } from "../utils/bankRegistry";
 import { AppIcon } from "./AppIcon";
 
-/* -------------------------------------------------------------------------
-   <AccountLogo /> — single source of truth for an account's visual
-   identity, used anywhere an account is rendered as more than plain text.
-
-   Priority:
-   - Credit Card  -> CreditCard icon as the main glyph, with the bank's
-                     official logo (if any) as a small corner badge.
-   - Cash         -> generic wallet/cash icon, no bank badge.
-   - has provider -> the bank's official logo as the main glyph.
-   - otherwise    -> generic account icon fallback.
-------------------------------------------------------------------------- */
-
 const SIZE_CLASSES = {
   sm: "w-8 h-8 rounded-[10px]",
   md: "w-10 h-10 rounded-[14px]",

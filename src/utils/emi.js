@@ -1,16 +1,4 @@
-/* --------------------------------- EMI math -------------------------------- */
-/* Standard reducing-balance EMI formula. `annualRatePercent` is the yearly
-   rate as a plain percentage (e.g. 14.5 for 14.5% p.a.) — converted to a
-   monthly rate internally. A 0% rate is treated as a straight-line split
-   (principal / tenure) rather than dividing by zero.
 
-   Amounts are rounded to the nearest rupee by design — this is the EMI
-   repayment model itself (real lenders quote EMIs in whole rupees), not a
-   display-only rounding — so what's shown in the conversion modal is exactly
-   what gets stored. totalPayable is emiAmount * tenureMonths; any sub-rupee
-   rounding remainder is absorbed into the final installment by the backend
-   (create_emi_plan(), supabase/schema.sql) so the schedule always sums to
-   exactly totalPayable. */
 
 export function calculateEmi(principal, annualRatePercent, tenureMonths) {
   const P = Number(principal) || 0;

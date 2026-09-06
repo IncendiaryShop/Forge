@@ -1,5 +1,4 @@
-/* --------------------------- Forge theme (dark only) --------------------------- */
-/* Single static theme object — Forge has no light mode and no theme switching. */
+
 
 export const theme = {
   app: "bg-bg text-text",
@@ -8,7 +7,7 @@ export const theme = {
 
   content: "bg-content",
 
-  card: "bg-[#181818] border-white/[0.08]",
+  card: "bg-card border-border",
 
   cardHover: "hover:bg-elevated",
 

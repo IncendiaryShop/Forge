@@ -1,21 +1,3 @@
--- ============================================================================
--- Phase 2 — Credit Card EMI Foundation.
--- Adds emi_plans + emi_installments, plus the create_emi_plan() and
--- pay_emi_installment() RPCs that operate on them atomically (same pattern
--- as pay_bill()/pay_invoice() in schema.sql). Run once against an existing
--- project (SQL editor, or `supabase db push`). Idempotent: safe to re-run.
--- ============================================================================
-
--- ----------------------------------------------------------------------------
--- emi_plans
--- Linked to the ORIGINAL purchase transaction (transaction_id) — that
--- transaction is never modified by this feature; converting it to EMI only
--- ever attaches a plan to it. `unique (transaction_id, user_id)` is what
--- enforces "a transaction can only be converted to EMI once" at the database
--- level (mirrored by an application-level check in create_emi_plan() too, so
--- the user sees a friendly error instead of a raw constraint violation in the
--- common case).
--- ----------------------------------------------------------------------------
 create table if not exists public.emi_plans (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -40,16 +22,6 @@ create index if not exists emi_plans_user_id_idx on public.emi_plans (user_id);
 create index if not exists emi_plans_transaction_id_idx on public.emi_plans (transaction_id);
 create index if not exists emi_plans_account_id_idx on public.emi_plans (account_id);
 
--- ----------------------------------------------------------------------------
--- emi_installments
--- payment_transaction_id points at the Transfer transaction created when an
--- installment is actually paid (see pay_emi_installment() below) — that
--- Transfer is what reduces the card's outstanding, exactly like any other
--- Credit Card payment. ON DELETE CASCADE from emi_plans means deleting a plan
--- can never leave an orphaned installment row; ON DELETE SET NULL from
--- transactions means deleting a payment transaction un-links it from its
--- installment rather than deleting installment history.
--- ----------------------------------------------------------------------------
 create table if not exists public.emi_installments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -71,10 +43,6 @@ create index if not exists emi_installments_user_id_idx on public.emi_installmen
 create index if not exists emi_installments_plan_id_idx on public.emi_installments (emi_plan_id);
 create index if not exists emi_installments_due_date_idx on public.emi_installments (due_date);
 
--- ============================================================================
--- updated_at auto-touch trigger — extend the existing trigger to the two new
--- tables (same function as every other table, defined earlier in schema.sql).
--- ============================================================================
 do $$
 declare t text;
 begin
@@ -85,10 +53,6 @@ begin
   end loop;
 end $$;
 
--- ============================================================================
--- Row Level Security — same ownership pattern as every other user-owned
--- table (select/insert/update/delete restricted to auth.uid() = user_id).
--- ============================================================================
 alter table public.emi_plans enable row level security;
 alter table public.emi_installments enable row level security;
 
@@ -111,9 +75,6 @@ begin
   end loop;
 end $$;
 
--- ============================================================================
--- Realtime — add the two new tables to the existing publication.
--- ============================================================================
 do $$
 begin
   if not exists (
@@ -126,24 +87,6 @@ exception when undefined_object then
   create publication supabase_realtime for table public.emi_plans, public.emi_installments;
 end $$;
 
--- ============================================================================
--- create_emi_plan — atomic EMI conversion.
--- Validates the transaction is an Expense owned by the caller, that the
--- given account matches the transaction's account AND is a Credit Card, and
--- that the transaction hasn't already been converted — then inserts the plan
--- and generates its installment schedule in the same transaction. The
--- ORIGINAL transaction row is never touched (no update statement against
--- public.transactions anywhere in this function), so its amount/date/
--- category/account stay exactly as they were — satisfying "do not modify the
--- original transaction" and "credit card outstanding must not change on
--- conversion" simultaneously, since outstanding is derived from transactions
--- as-is.
---
--- EMI math (amount/interest/total) is computed client-side and passed in
--- rather than recomputed here, so the schedule always matches exactly what
--- the user saw in the conversion modal. The last installment absorbs any
--- rounding remainder so the schedule always sums to exactly p_total_payable.
--- ============================================================================
 create or replace function public.create_emi_plan(
   p_transaction_id uuid,
   p_account_id uuid,
@@ -248,15 +191,6 @@ $$;
 revoke all on function public.create_emi_plan(uuid, uuid, numeric, numeric, int, numeric, numeric, numeric, date) from public;
 grant execute on function public.create_emi_plan(uuid, uuid, numeric, numeric, int, numeric, numeric, numeric, date) to authenticated;
 
--- ============================================================================
--- pay_emi_installment — atomic EMI installment payment.
--- Records the payment as a Transfer FROM p_source_account_id TO the EMI
--- plan's Credit Card account — the exact same mechanism as any other
--- Credit Card payment (see App.jsx's accountOutstanding()), so paying an
--- installment reduces the card's outstanding automatically, with no
--- separate "EMI payment" balance logic required. Marks the installment Paid,
--- and flips the plan to 'Completed' once every installment is paid.
--- ============================================================================
 create or replace function public.pay_emi_installment(
   p_installment_id uuid,
   p_source_account_id uuid,

@@ -23,12 +23,12 @@ import { resolveBillDisplay } from "../utils/billRegistry";
 import { sortTransactionsDesc, relativeDate } from "../utils/transactionUtils";
 
 const tooltipStyle = {
-  background: "#1E1E29",
-  border: "1px solid rgba(245,245,247,0.08)",
+  background: "var(--color-card)",
+  border: "1px solid var(--color-border)",
   borderRadius: 14,
   fontSize: 13,
   fontFamily: "Mona Sans",
-  color: "#F5F5F7",
+  color: "var(--color-text)",
   boxShadow: "0 8px 24px -8px rgba(0,0,0,0.4)",
 };
 
@@ -232,12 +232,9 @@ export function Dashboard() {
   }, [monthTxns]);
 
   const [periodType, setPeriodType] = useState("monthly");
-  const [upcomingTab, setUpcomingTab] = useState("payments"); // "payments" | "emi"
-  // Mobile-only quick action shortcut — prefills the same TransactionForm
-  // used everywhere else with a starting type so the two most common
-  // actions (log an expense / log income) are one tap away from the
-  // dashboard, matching the "3. Quick actions" mobile priority.
-  const [quickAddType, setQuickAddType] = useState(null); // "Expense" | "Income" | null
+  const [upcomingTab, setUpcomingTab] = useState("payments");
+
+  const [quickAddType, setQuickAddType] = useState(null);
 
   const [monthSel, setMonthSel] = useState({
     month: new Date().getMonth(),
@@ -480,10 +477,6 @@ export function Dashboard() {
     })
     .slice(0, 3);
 
-  // Purely additive/display-only — reuses the same "due soon" window and
-  // badge/label helpers as upcomingPayments above, but never feeds into any
-  // KPI/chart total, so it can't double-count anything already computed
-  // elsewhere on this page.
   const upcomingEmiInstallments = (data.emiInstallments || [])
     .filter((inst) => inst.status !== "Paid")
     .map((inst) => {
@@ -587,15 +580,14 @@ export function Dashboard() {
 
         </div>
 
-        {/* ================= Quick Actions (mobile only) ================= */}
         <div className="grid grid-cols-4 gap-2.5 lg:hidden">
           <button
             type="button"
             onClick={() => setQuickAddType("Expense")}
-            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-white/[0.08] bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
+            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-border bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-border transition-all duration-200"
           >
-            <span className="forge-card-icon w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
-              <AppIcon name="transactionTypes.expense" size={14} />
+            <span className="forge-card-icon w-8 h-8 rounded-full bg-danger/5 flex items-center justify-center">
+              <AppIcon name="transactionTypes.expense" size={14} className="text-danger"/>
             </span>
             <span className="text-[11px] font-medium leading-none">Expense</span>
           </button>
@@ -603,10 +595,10 @@ export function Dashboard() {
           <button
             type="button"
             onClick={() => setQuickAddType("Income")}
-            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-white/[0.08] bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
+            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-border bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-border transition-all duration-200"
           >
-            <span className="forge-card-icon w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <AppIcon name="transactionTypes.income" size={14} className="text-emerald-500" />
+            <span className="forge-card-icon w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+              <AppIcon name="transactionTypes.income" size={14} className="text-success" />
             </span>
             <span className="text-[11px] font-medium leading-none">Income</span>
           </button>
@@ -614,7 +606,7 @@ export function Dashboard() {
           <button
             type="button"
             onClick={() => setQuickAddType("Transfer")}
-            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-white/[0.08] bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
+            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-border bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-border transition-all duration-200"
           >
             <span className="forge-card-icon w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
               <AppIcon name="transactionTypes.transfer" size={14} />
@@ -625,7 +617,7 @@ export function Dashboard() {
           <button
             type="button"
             onClick={() => setPage("budget")}
-            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-white/[0.08] bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
+            className="forge-button flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-border bg-white/[0.02] py-3.5 hover:bg-white/[0.05] hover:border-border transition-all duration-200"
           >
             <span className="forge-card-icon w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
               <AppIcon name="dashboard.budget" size={14} />
@@ -634,14 +626,12 @@ export function Dashboard() {
           </button>
         </div>
 
-
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.8fr)_minmax(280px,1fr)] gap-4 items-stretch">
 
           <Card className="p-5 sm:p-8 min-w-0">
 
             <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
 
-              {/* Cash Flow heading + hover info */}
               <div className="group relative flex items-center gap-1.5">
 
                 <h3 className="type-section-title">
@@ -656,7 +646,7 @@ export function Dashboard() {
                     className="cursor-help text-white/40 transition-colors group-hover:text-white/80"
                   />
 
-                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 translate-y-1 rounded-xl border border-white/[0.08] bg-[#151519]/95 p-4 opacity-0 shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 translate-y-1 rounded-xl border border-border bg-card/95 p-4 opacity-0 shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
 
                     <span className="block text-[13px] font-semibold text-white mb-1.5">
                       What is Net Cash Flow?
@@ -849,12 +839,12 @@ export function Dashboard() {
   >
     <stop
       offset="0%"
-      stopColor="#C5B4FB"
+      stopColor="var(--color-chart-1)"
       stopOpacity={0.3}
     />
     <stop
       offset="100%"
-      stopColor="#C5B4FB"
+      stopColor="var(--color-chart-1)"
       stopOpacity={0}
     />
   </linearGradient>
@@ -868,12 +858,12 @@ export function Dashboard() {
   >
     <stop
       offset="0%"
-      stopColor="#60269D"
+      stopColor="var(--color-chart-4)"
       stopOpacity={0.45}
     />
     <stop
       offset="100%"
-      stopColor="#60269D"
+      stopColor="var(--color-chart-4)"
       stopOpacity={0}
     />
   </linearGradient>
@@ -881,7 +871,7 @@ export function Dashboard() {
 
                     <CartesianGrid
                       strokeDasharray="2 4"
-                      stroke="rgba(245,245,247,0.04)"
+                      stroke="var(--color-border-subtle)"
                       vertical={false}
                     />
 
@@ -892,7 +882,7 @@ export function Dashboard() {
                       }
                       tick={{
                         fontSize: 12,
-                        fill: "#808080",
+                        fill: "var(--color-subtext)",
                         fontFamily: "Mona Sans"
                       }}
                       axisLine={false}
@@ -907,7 +897,7 @@ export function Dashboard() {
                       allowDecimals={false}
                       tick={{
                         fontSize: 11,
-                        fill: "#808080",
+                        fill: "var(--color-subtext)",
                         fontFamily: "Mona Sans"
                       }}
                       axisLine={false}
@@ -923,7 +913,7 @@ export function Dashboard() {
                         <CashFlowTooltip />
                       }
                       cursor={{
-                        fill: "rgba(245,245,247,0.03)"
+                        fill: "var(--color-accent-ambient)"
                       }}
                     />
 
@@ -938,7 +928,7 @@ export function Dashboard() {
                     <Area
   type="monotone"
   dataKey="Income"
-  stroke="#C5B4FB"
+  stroke="var(--color-chart-1)"
   strokeWidth={1.5}
   fill="url(#incomeGradient)"
   dot={false}
@@ -951,7 +941,7 @@ export function Dashboard() {
 <Area
   type="monotone"
   dataKey="Expenses"
-  stroke="#60269D"
+  stroke="var(--color-chart-4)"
   strokeWidth={1.5}
   fill="url(#expenseGradient)"
   dot={false}
@@ -964,11 +954,11 @@ export function Dashboard() {
                     <Line
                       type="monotone"
                       dataKey="Net Cash Flow"
-                      stroke="#F5A524"
+                      stroke="var(--color-warning)"
                       strokeWidth={2.5}
                       dot={{
                         r: 3,
-                        fill: "#F5A524",
+                        fill: "var(--color-warning)",
                         strokeWidth: 0
                       }}
                       activeDot={{ r: 5 }}
@@ -1024,17 +1014,17 @@ export function Dashboard() {
                   onClick={() =>
                     setPage("invoices")
                   }
-                  className="group w-full text-left rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all duration-200 hover:bg-white/[0.05] hover:border-white/10"
+                  className="group w-full text-left rounded-2xl border border-border-subtle bg-white/[0.02] p-4 transition-all duration-200 hover:bg-white/[0.05] hover:border-border"
                 >
 
                   <div className="flex items-center gap-3.5">
 
-                    <div className="forge-card-icon w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-rose-500/15">
+                    <div className="forge-card-icon w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-danger/15">
 
                       <AppIcon
                         name="invoiceStates.unpaid"
                         size={17}
-                        className="forge-card-icon__glyph text-rose-400"
+                        className="forge-card-icon__glyph text-danger"
                       />
 
                     </div>
@@ -1045,7 +1035,7 @@ export function Dashboard() {
                         {invoiceSummary.unpaid.count} Unpaid
                       </p>
 
-                      <p className="text-[22px] font-bold tracking-[-0.01em] text-rose-400 mt-0.5">
+                      <p className="text-[22px] font-bold tracking-[-0.01em] text-danger mt-0.5">
                         {fmt(
                           invoiceSummary.unpaid.amount
                         )}
@@ -1071,17 +1061,17 @@ export function Dashboard() {
                   onClick={() =>
                     setPage("invoices")
                   }
-                  className="group w-full text-left rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all duration-200 hover:bg-white/[0.05] hover:border-white/10"
+                  className="group w-full text-left rounded-2xl border border-border-subtle bg-white/[0.02] p-4 transition-all duration-200 hover:bg-white/[0.05] hover:border-border"
                 >
 
                   <div className="flex items-center gap-3.5">
 
-                    <div className="forge-card-icon w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-emerald-500/15">
+                    <div className="forge-card-icon w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-success/15">
 
                       <AppIcon
                         name="invoiceStates.paid"
                         size={17}
-                        className="forge-card-icon__glyph text-emerald-400"
+                        className="forge-card-icon__glyph text-success"
                       />
 
                     </div>
@@ -1092,7 +1082,7 @@ export function Dashboard() {
                         {invoiceSummary.paid.count} Paid
                       </p>
 
-                      <p className="text-[22px] font-bold tracking-[-0.01em] text-emerald-400 mt-0.5">
+                      <p className="text-[22px] font-bold tracking-[-0.01em] text-success mt-0.5">
                         {fmt(
                           invoiceSummary.paid.amount
                         )}
@@ -1114,7 +1104,7 @@ export function Dashboard() {
 
                 </button>
 
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <div className="rounded-2xl border border-border-subtle bg-white/[0.02] p-4">
 
                   <div className="flex items-center gap-3.5">
 
@@ -1205,7 +1195,7 @@ export function Dashboard() {
                     <div
                       className={`forge-card-icon w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 ${
                         t.type === "Income"
-                          ? "bg-emerald-500/10"
+                          ? "bg-success/10"
                           : "bg-white/5"
                       }`}
                     >
@@ -1221,7 +1211,7 @@ export function Dashboard() {
                         size={14}
                         className={`forge-card-icon__glyph ${
                           t.type === "Income"
-                            ? "text-emerald-500"
+                            ? "text-success"
                             : ""
                         }`}
                       />
@@ -1247,7 +1237,7 @@ export function Dashboard() {
                   <p
                     className={`text-[17px] font-medium tracking-[-0.01em] shrink-0 ${
                       t.type === "Income"
-                        ? "text-emerald-500"
+                        ? "text-success"
                         : t.type === "Transfer"
                           ? "text-white/55"
                           : "text-danger"
@@ -1289,7 +1279,7 @@ export function Dashboard() {
                 onClick={() => setUpcomingTab("payments")}
                 className={`text-[13px] font-semibold leading-none px-3 py-1.5 rounded-full transition-all duration-200 ${
                   upcomingTab === "payments"
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-bg"
                     : `${theme.subtext} hover:text-white`
                 }`}
               >
@@ -1300,7 +1290,7 @@ export function Dashboard() {
                 onClick={() => setUpcomingTab("emi")}
                 className={`text-[13px] font-semibold leading-none px-3 py-1.5 rounded-full transition-all duration-200 ${
                   upcomingTab === "emi"
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-bg"
                     : `${theme.subtext} hover:text-white`
                 }`}
               >
@@ -1331,7 +1321,7 @@ export function Dashboard() {
                   onClick={() =>
                     setPage("bills")
                   }
-                  className="forge-link type-button w-full text-center rounded-xl h-[42px] flex items-center justify-center border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200 mt-4"
+                  className="forge-link type-button w-full text-center rounded-xl h-[42px] flex items-center justify-center border border-border bg-white/[0.02] hover:bg-white/[0.05] hover:border-border transition-all duration-200 mt-4"
                 >
                   Manage Bills
                 </button>
@@ -1355,7 +1345,7 @@ export function Dashboard() {
                         onClick={() =>
                           setPage("bills")
                         }
-                        className="group cursor-pointer rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.05] hover:border-white/10 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)]"
+                        className="group cursor-pointer rounded-xl border border-border-subtle bg-white/[0.02] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.05] hover:border-border hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)]"
                       >
 
                         <div className="flex items-center justify-between mb-1.5">
@@ -1425,7 +1415,7 @@ export function Dashboard() {
                     onClick={() =>
                       setPage("bills")
                     }
-                    className="forge-link type-button w-full text-center rounded-xl h-[42px] flex items-center justify-center border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-200"
+                    className="forge-link type-button w-full text-center rounded-xl h-[42px] flex items-center justify-center border border-border bg-white/[0.02] hover:bg-white/[0.05] hover:border-border transition-all duration-200"
                   >
                     View All
                   </button>
@@ -1478,7 +1468,7 @@ export function Dashboard() {
                       onClick={() =>
                         setPage("transactions")
                       }
-                      className="group cursor-pointer rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.05] hover:border-white/10 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)]"
+                      className="group cursor-pointer rounded-xl border border-border-subtle bg-white/[0.02] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.05] hover:border-border hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)]"
                     >
 
                       <div className="flex items-center justify-between mb-1.5">
@@ -1746,7 +1736,7 @@ export function Dashboard() {
               colorClass={
                 budgetSpent >
                 budgetTotal
-                  ? "bg-red-500"
+                  ? "bg-danger"
                   : "bg-accent"
               }
             />
@@ -1804,7 +1794,7 @@ export function Dashboard() {
             budgetTotal &&
             budgetTotal > 0 && (
 
-              <p className="type-secondary text-red-500 mt-3 flex items-center gap-1">
+              <p className="type-secondary text-danger mt-3 flex items-center gap-1">
                 <AppIcon
                   name="ui.warning"
                   size={12}

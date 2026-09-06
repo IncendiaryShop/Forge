@@ -3,9 +3,18 @@ import { useApp } from "../context/AppContext";
 import { NAV } from "../utils/constants";
 import { computeBillStatus } from "../utils/billCycle";
 import { AppIcon } from "./AppIcon";
+import { Badge } from "./Badge";
 
 export function Sidebar() {
-  const { theme, page, setPage, data, signOut } = useApp();
+  const {
+    page,
+    setPage,
+    data,
+    signOut,
+    isDemoMode,
+    resetDemo,
+    onCreateAccount,
+  } = useApp();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -28,14 +37,14 @@ export function Sidebar() {
         shrink-0
         flex
         flex-col
-        bg-[#0e0e0e]
+        bg-sidebar
         border-r
-        border-white/[0.06]
+        border-border-subtle
         hidden
         md:flex
       "
     >
-      {/* ================= Brand ================= */}
+
       <div className="px-6 pt-8 pb-7 flex justify-center">
         <img
           src={ForgeLogo}
@@ -45,7 +54,6 @@ export function Sidebar() {
         />
       </div>
 
-      {/* ================= Navigation ================= */}
       <nav className="flex-1 px-3 py-3 space-y-3">
         {NAV.map((item) => {
           const active = page === item.id;
@@ -56,11 +64,26 @@ export function Sidebar() {
               type="button"
               onClick={() => setPage(item.id)}
               aria-current={active ? "page" : undefined}
-              className={`forge-sidebar-nav type-button w-full flex items-center gap-3 px-4 h-11 rounded-[8px] transition-all duration-200 ease-out border ${
-  active
-    ? "bg-[#9366E9] border-transparent text-[#171717]"
-    : "border-transparent text-white hover:bg-white/[0.04] hover:border-transparent hover:text-white"
-}`}
+              className={`
+                forge-sidebar-nav
+                type-button
+                w-full
+                flex
+                items-center
+                gap-3
+                px-4
+                h-11
+                rounded-[8px]
+                transition-all
+                duration-200
+                ease-out
+                border
+                ${
+                  active
+                    ? "bg-accent-hover border-transparent text-bg"
+                    : "bg-transparent border-transparent text-white hover:bg-white/[0.04] hover:border-transparent hover:text-white"
+                }
+              `}
             >
               <AppIcon
                 name={item.icon}
@@ -72,34 +95,100 @@ export function Sidebar() {
               </span>
 
               {item.id === "bills" &&
-  billsDueSoon > 0 &&
-  !active && (
-    <span
-      className="
-        min-w-[20px]
-        h-[20px]
-        px-1.5
-        flex
-        items-center
-        justify-center
-        rounded-full
-        bg-white/[0.7]
-        border
-        border-white/[0.10]
-        text-[#171717]
-        text-[11px]
-        font-mono
-      "
-    >
-      {billsDueSoon}
-    </span>
-  )}
+                billsDueSoon > 0 &&
+                !active && (
+                  <span
+                    className="
+                      min-w-[20px]
+                      h-[20px]
+                      px-1.5
+                      flex
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-white/[0.7]
+                      border
+                      border-border
+                      text-bg
+                      text-[11px]
+                      font-mono
+                    "
+                  >
+                    {billsDueSoon}
+                  </span>
+                )}
             </button>
           );
         })}
       </nav>
 
-      {/* ================= Sign out ================= */}
+      {isDemoMode && (
+        <div className="px-3 pb-3 space-y-2">
+          <Badge className="bg-accent/12 text-accent w-full h-8 rounded-3xl justify-center">
+            Demo Mode
+          </Badge>
+
+          <button
+            type="button"
+            onClick={resetDemo}
+            className="
+              forge-sidebar-nav
+              type-button
+              w-full
+              flex
+              items-center
+              justify-center
+              gap-2
+              px-4
+              h-10
+              rounded-[8px]
+              border
+              border-border
+              text-white/70
+              hover:bg-white/[0.04]
+              hover:text-white
+              transition-all
+              duration-200
+              ease-out
+            "
+          >
+            <span className="text-[13px] font-normal">
+              Reset Demo
+            </span>
+          </button>
+
+          {onCreateAccount && (
+            <button
+              type="button"
+              onClick={onCreateAccount}
+              className="
+                forge-sidebar-nav
+                type-button
+                w-full
+                flex
+                items-center
+                justify-center
+                gap-2
+                px-4
+                h-10
+                rounded-[8px]
+                bg-accent
+                text-bg
+                hover:bg-accent-hover
+                hover:text-white
+                transition-all
+                duration-200
+                ease-out
+              "
+            >
+              <span className="text-[13px] font-medium">
+                Create free account
+              </span>
+            </button>
+          )}
+        </div>
+      )}
+
       {signOut && (
         <div className="px-3 pb-6 pt-2">
           <button
@@ -119,7 +208,7 @@ export function Sidebar() {
               border-transparent
               text-white
               hover:bg-white/[0.04]
-              hover:border-white/[0.06]
+              hover:border-border-subtle
               hover:text-white
               transition-all
               duration-200
@@ -132,7 +221,7 @@ export function Sidebar() {
             />
 
             <span className="flex-1 text-left text-[15px] font-normal tracking-[-0.01em]">
-              Sign out
+              {isDemoMode ? "Exit Demo" : "Sign out"}
             </span>
           </button>
         </div>

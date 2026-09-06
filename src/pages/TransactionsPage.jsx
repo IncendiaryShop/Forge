@@ -15,19 +15,19 @@ import {
 
 import { TransactionForm } from "../forms/TransactionForm";
 import { EmiConvertForm } from "../forms/EmiConvertForm";
-import { hashColorClasses, fmt } from "../utils/helpers";
+import { fmt } from "../utils/helpers";
 import { sortTransactionsDesc } from "../utils/transactionUtils";
 
 export function TransactionsPage() {
   const { data, theme, deleteTransaction } = useApp();
 
-  const [modal, setModal] = useState(null); // 'new' | txn object | null
+  const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [catFilter, setCatFilter] = useState("All");
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [emiModal, setEmiModal] = useState(null); // transaction being converted | null
-  const [emiScheduleForId, setEmiScheduleForId] = useState(null); // emi plan id | null
+  const [emiModal, setEmiModal] = useState(null);
+  const [emiScheduleForId, setEmiScheduleForId] = useState(null);
   const emiScheduleForPlan = data.emiPlans.find((p) => p.id === emiScheduleForId) || null;
 
   const accountName = useCallback(
@@ -139,11 +139,29 @@ export function TransactionsPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
 
-      {/* ================= Filters / Actions ================= */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+<div
+  className="
+    sticky
+    top-0
+    z-30
+    -mx-4
+    px-4
+    pt-2
+    py-3
+    bg-content
+    border-b
+    border-border-subtle
+    flex
+    flex-col
+    gap-3
+    sm:flex-row
+    sm:flex-wrap
+    sm:items-center
+    sm:justify-between
+  "
+>
         <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center flex-1">
 
-          {/* Search */}
           <div className="relative w-full sm:w-auto">
             <AppIcon
               name="ui.search"
@@ -172,7 +190,7 @@ export function TransactionsPage() {
           </div>
 
           <div className="flex items-center gap-2.5">
-            {/* Type Filter */}
+
             <Select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
@@ -184,7 +202,6 @@ export function TransactionsPage() {
               <option value="Transfer">Transfer</option>
             </Select>
 
-            {/* Category Filter */}
             <Select
               value={catFilter}
               onChange={(e) => setCatFilter(e.target.value)}
@@ -201,10 +218,8 @@ export function TransactionsPage() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2.5">
           <PrimaryButton onClick={() => setModal("new")} className="flex-1 sm:flex-none justify-center">
-            <AppIcon name="ui.add" size={15} />
             Add Transaction
           </PrimaryButton>
 
@@ -214,7 +229,6 @@ export function TransactionsPage() {
         </div>
       </div>
 
-      {/* ================= Transactions: mobile cards ================= */}
       <div className="md:hidden">
         {filtered.length === 0 ? (
           <Card>
@@ -231,13 +245,13 @@ export function TransactionsPage() {
                 <div className="flex items-start gap-3">
                   <div
                     className={`forge-card-icon w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 ${
-                      t.type === "Income" ? "bg-emerald-500/10" : "bg-white/5"
+                      t.type === "Income" ? "bg-success/10" : "bg-white/5"
                     }`}
                   >
                     <AppIcon
                       name={txnIconName(t)}
                       size={16}
-                      className={`forge-card-icon__glyph ${t.type === "Income" ? "text-emerald-500" : ""}`}
+                      className={`forge-card-icon__glyph ${t.type === "Income" ? "text-success" : ""}`}
                     />
                   </div>
 
@@ -251,7 +265,7 @@ export function TransactionsPage() {
                       </div>
                       <p
                         className={`text-[16px] font-semibold tracking-[-0.01em] shrink-0 ${
-                          t.type === "Income" ? "text-emerald-500" : t.type === "Transfer" ? "text-white/55" : "text-danger"
+                          t.type === "Income" ? "text-success" : t.type === "Transfer" ? "text-white/55" : "text-danger"
                         }`}
                       >
                         {t.type === "Income" ? "+" : t.type === "Expense" ? "-" : ""}
@@ -293,7 +307,6 @@ export function TransactionsPage() {
         )}
       </div>
 
-      {/* ================= Transactions Table (desktop) ================= */}
       <Card className="overflow-hidden hidden md:block">
 
         {filtered.length === 0 ? (
@@ -312,9 +325,8 @@ export function TransactionsPage() {
 
             <table className="w-full text-base">
 
-              {/* ================= Table Header ================= */}
               <thead>
-                <tr className="type-small-label text-left uppercase bg-[#262626] text-[#EFEFEF]">
+                <tr className="type-small-label text-left uppercase bg-elevated text-text">
 
                   <th className="px-6 py-3.5">
                     Date
@@ -343,20 +355,18 @@ export function TransactionsPage() {
                 </tr>
               </thead>
 
-              {/* ================= Table Body ================= */}
-              <tbody className="bg-[#0c0c0c]">
+              <tbody className="bg-content">
                 {filtered.map((t) => (
                   <tr
                     key={t.id}
                     className="
                       forge-row
                       border-b
-                      border-white/[0.06]
+                      border-border-subtle
                       last:border-0
                     "
                   >
 
-                    {/* Date */}
                     <td className="
                       type-small-label
                       px-6
@@ -367,7 +377,6 @@ export function TransactionsPage() {
                       {t.date}
                     </td>
 
-                    {/* Description */}
                     <td className="
                       type-body
                       px-6
@@ -397,14 +406,13 @@ export function TransactionsPage() {
                       </div>
                     </td>
 
-                    {/* Category */}
                     <td className="px-6 py-4">
   <Badge
     className="
       !bg-transparent
       !text-white/70
       !border
-      !border-white/15
+      !border-border-hover
       rounded-full
       px-2.5
       py-0.5
@@ -417,7 +425,6 @@ export function TransactionsPage() {
   </Badge>
 </td>
 
-                    {/* Account */}
                     <td className="
                       px-6
                       py-4
@@ -440,7 +447,6 @@ export function TransactionsPage() {
                         )}
                     </td>
 
-                    {/* Amount */}
                     <td
                       className={`
                         type-body
@@ -451,7 +457,7 @@ export function TransactionsPage() {
                         whitespace-nowrap
                         ${
                           t.type === "Income"
-                            ? "text-emerald-500"
+                            ? "text-success"
                             : t.type === "Transfer"
                               ? "text-white/55"
                               : "text-danger"
@@ -467,7 +473,6 @@ export function TransactionsPage() {
                       {fmt(t.amount)}
                     </td>
 
-                    {/* Actions */}
                     <td className="px-6 py-4">
 
                       <div className="
@@ -522,7 +527,6 @@ export function TransactionsPage() {
         )}
       </Card>
 
-      {/* ================= Add / Edit Modal ================= */}
       {modal && (
         <Modal
           title={
@@ -539,7 +543,6 @@ export function TransactionsPage() {
         </Modal>
       )}
 
-      {/* ================= Delete Modal ================= */}
       {deleteTarget && (
         <Modal
           title="Delete Transaction"
@@ -550,7 +553,7 @@ export function TransactionsPage() {
             <AppIcon
               name="ui.warning"
               size={18}
-              className="text-amber-400 shrink-0 mt-0.5"
+              className="text-warning shrink-0 mt-0.5"
             />
 
             <p className={`type-secondary ${theme.subtext}`}>
@@ -574,7 +577,7 @@ export function TransactionsPage() {
             </GhostButton>
 
             <PrimaryButton
-              className="flex-1 justify-center !bg-red-500 hover:!bg-red-600"
+              className="flex-1 justify-center !bg-danger hover:!bg-danger/85"
               onClick={confirmDelete}
             >
               Delete Transaction
@@ -584,7 +587,6 @@ export function TransactionsPage() {
         </Modal>
       )}
 
-      {/* ================= Convert to EMI Modal ================= */}
       {emiModal && (
         <Modal
           title={`Convert "${emiModal.description || emiModal.category}" to EMI`}
@@ -597,7 +599,6 @@ export function TransactionsPage() {
         </Modal>
       )}
 
-      {/* ================= EMI Schedule Modal ================= */}
       {emiScheduleForPlan && (
         <Modal
           title="EMI Schedule"

@@ -31,7 +31,7 @@ export function GoalsPage() {
   return (
     <div className="space-y-8">
       <div className="flex justify-end">
-        <PrimaryButton onClick={() => setModal("new")}><AppIcon name="ui.add" size={15} /> Add Goal</PrimaryButton>
+        <PrimaryButton onClick={() => setModal("new")}>Add Goal</PrimaryButton>
       </div>
       {data.goals.length === 0 ? (
         <Card className="p-7"><EmptyState icon={(p) => <AppIcon name="goals.savings" {...p} />} title="No savings goals" subtitle="Set a goal to start tracking progress" /></Card>
@@ -81,7 +81,7 @@ export function GoalsPage() {
             <Field label="Amount (₹)">
               <TextInput type="number" min="0.01" step="0.01" autoFocus value={amt} onChange={(e) => setAmt(e.target.value)} required />
             </Field>
-            {contributeError && <p className="type-secondary text-red-500">{contributeError}</p>}
+            {contributeError && <p className="type-secondary text-danger">{contributeError}</p>}
             <PrimaryButton type="submit" className="w-full justify-center">Add</PrimaryButton>
           </form>
         </Modal>
@@ -90,14 +90,14 @@ export function GoalsPage() {
       {deleteTarget && (
         <Modal title="Delete Goal" onClose={() => setDeleteTarget(null)}>
           <div className="flex items-start gap-3 mb-5">
-            <AppIcon name="ui.warning" size={18} className="text-amber-400 shrink-0 mt-0.5" />
+            <AppIcon name="ui.warning" size={18} className="text-warning shrink-0 mt-0.5" />
             <p className={`type-secondary ${theme.subtext}`}>
               Are you sure you want to delete <strong>{deleteTarget.name}</strong>? This cannot be undone.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <GhostButton className="flex-1 justify-center" onClick={() => setDeleteTarget(null)}>Cancel</GhostButton>
-            <PrimaryButton className="flex-1 justify-center !bg-red-500 hover:!bg-red-600" onClick={confirmDelete}>Delete Goal</PrimaryButton>
+            <PrimaryButton className="flex-1 justify-center !bg-danger hover:!bg-danger/85" onClick={confirmDelete}>Delete Goal</PrimaryButton>
           </div>
         </Modal>
       )}

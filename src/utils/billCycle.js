@@ -45,8 +45,8 @@ export function statusLabel(entry) {
 }
 
 export function badgeFor(entry) {
-  if (entry.overdue) return { label: "OVERDUE", cls: "bg-red-500/15 text-red-400 border border-red-500/20" };
-  if (entry.daysOut === 0) return { label: "TODAY", cls: "bg-red-500/15 text-red-400 border border-red-500/20" };
-  if (entry.daysOut === 1) return { label: "TOMORROW", cls: "bg-amber-500/15 text-amber-400 border border-amber-500/20" };
-  return { label: `${entry.daysOut} DAYS`, cls: "bg-amber-500/15 text-amber-400 border border-amber-500/20" };
+  if (entry.overdue) return { label: "OVERDUE", cls: "bg-danger/15 text-danger border border-danger/20" };
+  if (entry.daysOut === 0) return { label: "TODAY", cls: "bg-danger/15 text-danger border border-danger/20" };
+  if (entry.daysOut === 1) return { label: "TOMORROW", cls: "bg-warning/15 text-warning border border-warning/20" };
+  return { label: `${entry.daysOut} DAYS`, cls: "bg-warning/15 text-warning border border-warning/20" };
 }

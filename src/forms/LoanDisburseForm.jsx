@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../context/AppContext";
-import { Field, Select, TextInput, PrimaryButton, GhostButton, DatePicker } from "../components";
+import { Field, Select, PrimaryButton, GhostButton, DatePicker } from "../components";
 import { fmt, todayISO } from "../utils/helpers";
 import { generateLoanSchedule } from "../utils/loanAmortization";
 
@@ -74,7 +74,7 @@ export function LoanDisburseForm({ account, onDone }) {
         </div>
       )}
 
-      {error && <p className="type-secondary text-red-500">{error}</p>}
+      {error && <p className="type-secondary text-danger">{error}</p>}
 
       <div className="flex items-center gap-3">
         <GhostButton type="button" className="flex-1 justify-center" onClick={onDone}>Cancel</GhostButton>

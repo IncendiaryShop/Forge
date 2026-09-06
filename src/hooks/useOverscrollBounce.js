@@ -1,37 +1,10 @@
 import { useEffect, useRef } from "react";
 
-/* -------------------------------------------------------------------------
-   useOverscrollBounce
-   -------------------------------------------------------------------------
-   Drives a subtle "rubber-band" motion on the page's main scroll container
-   (the document itself — Forge has no inner overflow wrapper, the whole
-   page scrolls). It only activates while the user is actively trying to
-   scroll further than the real top/bottom boundary (a touch drag past the
-   edge, or a wheel/trackpad flick against the edge) — never during
-   ordinary in-bounds scrolling, and never continuously/idle. Motion only —
-   no color or glow.
-
-   Design notes:
-   - All boundary checks read `document.scrollingElement` directly; no
-     React state is used for the gesture itself, so nothing here causes a
-     re-render. Values are written straight to the DOM via a ref, batched
-     through requestAnimationFrame for touch.
-   - The browser's own native overscroll bounce is disabled globally via
-     `overscroll-behavior-y: none` on <html>/<body> (see styles/index.css)
-     so this custom effect is the only bounce the user ever sees — that
-     also means these listeners never need to call preventDefault, so
-     they stay fully passive and cheap.
-   - Any gesture that starts inside an element carrying
-     `data-no-rubber-band` (modals, the DatePicker popover, and anything
-     else with its own independent scrolling) is ignored entirely, so the
-     page-level effect never fights with nested scrollable UI.
-------------------------------------------------------------------------- */
-
-const MAX_PULL_TOUCH = 56; // px, subtle — not an exaggerated stretch
-const MAX_PULL_WHEEL = 26; // wheel/trackpad nudges are smaller than a drag
-const RESISTANCE = 140; // higher = more raw drag needed for the same pull
+const MAX_PULL_TOUCH = 56;
+const MAX_PULL_WHEEL = 26;
+const RESISTANCE = 140;
 const WHEEL_SENSITIVITY = 0.6;
-const WHEEL_IDLE_MS = 150; // treat "no new wheel events" as a release
+const WHEEL_IDLE_MS = 150;
 const RELEASE_TRANSITION = "transform 380ms var(--forge-ease, ease-out)";
 
 function prefersReducedMotion() {
@@ -54,8 +27,6 @@ function atBottom(el) {
   return el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
 }
 
-// Diminishing-returns damping so the pull eases off the further it's
-// dragged, instead of tracking the finger 1:1 (an exaggerated stretch).
 function dampen(raw, maxPull) {
   const sign = raw > 0 ? 1 : raw < 0 ? -1 : 0;
   const abs = Math.abs(raw);
@@ -115,7 +86,6 @@ export function useOverscrollBounce({ contentRef }) {
       });
     };
 
-    // ---------------------------- Touch ---------------------------------
     const onTouchStart = (e) => {
       if (e.touches.length !== 1) return;
       if (isIgnored(e.target)) return;
@@ -135,8 +105,7 @@ export function useOverscrollBounce({ contentRef }) {
       const pullingAtBottom = rawDelta < 0 && atBottom(scroller);
 
       if (!pullingAtTop && !pullingAtBottom) {
-        // In-bounds — this is ordinary scrolling, not an overscroll
-        // attempt. Let it happen natively; make sure nothing is pulled.
+
         if (pullRef.current !== 0) release();
         return;
       }
@@ -150,9 +119,6 @@ export function useOverscrollBounce({ contentRef }) {
       release();
     };
 
-    // ---------------------------- Wheel -----------------------------------
-    // Wheel/trackpad gestures have no explicit "release" — treat a short
-    // pause with no further wheel events as the release point.
     const onWheel = (e) => {
       if (isIgnored(e.target)) return;
 

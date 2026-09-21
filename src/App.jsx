@@ -17,6 +17,7 @@ import { MobileBrandHeader } from "./components/MobileBrandHeader";
 import { Modal } from "./components/Modal";
 import { PrimaryButton } from "./components/PrimaryButton";
 import { ScrollBounceBoundary } from "./components/ScrollBounceBoundary";
+import { SplashScreen } from "./components/SplashScreen";
 import { TransactionForm } from "./forms/TransactionForm";
 import { Dashboard } from "./pages/Dashboard";
 import { TransactionsPage } from "./pages/TransactionsPage";
@@ -616,7 +617,7 @@ function AuthenticatedApp({ userId, onSignOut, isDemoMode = false, onCreateAccou
   };
 
   if (dataStatus === "loading") {
-    return <CenteredScreen>Loading your dashboard…</CenteredScreen>;
+    return <SplashScreen />;
   }
 
   if (dataStatus === "error") {
@@ -703,7 +704,7 @@ function Gate() {
     return <AuthenticatedApp userId={DEMO_USER_ID} onSignOut={exitDemo} isDemoMode onCreateAccount={exitDemo} />;
   }
 
-  if (status === "loading") return <CenteredScreen>Checking your session…</CenteredScreen>;
+  if (status === "loading") return <SplashScreen />;
   if (status === "recovery") return <ResetPasswordScreen />;
   if (status === "signed-out") return <AuthGate onExploreDemo={enterDemo} />;
 

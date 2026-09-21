@@ -189,8 +189,6 @@ export function InvoicesPage() {
                   {inv.status !== "Paid" && (
                     <IconBtn icon="invoiceStates.payment" onClick={() => openPayModal(inv)} title="Mark Paid" />
                   )}
-                  {inv.pdfPath && <IconBtn icon="ui.view" onClick={() => viewInvoicePdf(inv)} title="View PDF" />}
-                  {inv.pdfPath && !isDemoMode && <IconBtn icon="ui.download" onClick={() => downloadInvoice(inv)} title="Download PDF" />}
                   <IconBtn icon="ui.edit" onClick={() => openEdit(inv)} title="Edit" />
                   <IconBtn icon="ui.delete" danger onClick={() => requestDelete(inv)} title="Delete" />
                 </div>
@@ -232,8 +230,6 @@ export function InvoicesPage() {
                         {inv.status !== "Paid" && (
                           <IconBtn icon="invoiceStates.payment" onClick={() => openPayModal(inv)} title="Mark Paid" />
                         )}
-                        {inv.pdfPath && <IconBtn icon="ui.view" onClick={() => viewInvoicePdf(inv)} title="View PDF" />}
-                  {inv.pdfPath && !isDemoMode && <IconBtn icon="ui.download" onClick={() => downloadInvoice(inv)} title="Download PDF" />}
                         <IconBtn icon="ui.edit" onClick={() => openEdit(inv)} title="Edit" />
                         <IconBtn icon="ui.delete" danger onClick={() => requestDelete(inv)} title="Delete" />
                       </div>

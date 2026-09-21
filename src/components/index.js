@@ -39,3 +39,7 @@ export { InvoiceGenerator } from "./InvoiceGenerator";
 export { InvoiceDetailModal } from "./InvoiceDetailModal";
 
 export { ManageClientsModal } from "./ManageClientsModal";
+
+export { KpiCarousel } from "./KpiCarousel";
+
+export { SplashScreen } from "./SplashScreen";

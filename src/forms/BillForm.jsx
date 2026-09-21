@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { Field, TextInput, Select, PrimaryButton, ServiceLogo, AppIcon } from "../components";
+import { Field, TextInput, Select, PrimaryButton, ServiceLogo, AppIcon, DatePicker } from "../components";
 import { EXPENSE_CATEGORIES } from "../utils/constants";
 import { SERVICES } from "../utils/serviceRegistry";
 import { BILL_TYPES, resolveBillDisplay } from "../utils/billRegistry";
@@ -10,7 +10,7 @@ const CUSTOM_SERVICE = SERVICES.find((s) => s.id === "custom");
 
 export function BillForm({ onDone, existing }) {
   const { addBill, updateBill } = useApp();
-  const [form, setForm] = useState(existing || { name: "", category: "Subscriptions", amount: "", dueDay: 1, recurring: true, provider: "custom" });
+  const [form, setForm] = useState(existing || { name: "", category: "Subscriptions", amount: "", dueDay: 1, recurring: true, provider: "custom", lastBillDate: "" });
   const [error, setError] = useState("");
   const [categoryTouched, setCategoryTouched] = useState(false);
 
@@ -102,6 +102,25 @@ export function BillForm({ onDone, existing }) {
       </div>
       <Field label="Due Day of Month">
         <TextInput type="number" min="1" max="31" value={form.dueDay} onChange={(e) => setForm({ ...form, dueDay: e.target.value })} />
+      </Field>
+      <Field label="Ends On (optional)">
+        <div className="flex items-center gap-2">
+          <DatePicker
+            value={form.lastBillDate || ""}
+            onChange={(e) => setForm({ ...form, lastBillDate: e.target.value })}
+            placeholder="No end"
+            className="flex-1"
+          />
+          {form.lastBillDate && (
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, lastBillDate: "" })}
+              className="type-secondary text-accent shrink-0"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </Field>
       {error && <p className="type-secondary text-danger">{error}</p>}
       <PrimaryButton type="submit" className="w-full justify-center mt-2">{existing ? "Save Changes" : "Add Bill"}</PrimaryButton>

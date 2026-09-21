@@ -14,7 +14,8 @@ import {
   Legend
 } from "recharts";
 import { useApp } from "../context/AppContext";
-import { Card, Kpi, EmptyState, ProgressBar, ServiceLogo, AppIcon, Modal, Select } from "../components";
+import { useIsMobile } from "../hooks/useIsMobile";
+import { Card, Kpi, KpiCarousel, EmptyState, ProgressBar, ServiceLogo, AppIcon, Modal, Select } from "../components";
 import { TransactionForm } from "../forms/TransactionForm";
 import { CHART_COLORS } from "../utils/constants";
 import { fmt, monthKey, todayISO } from "../utils/helpers";
@@ -233,6 +234,7 @@ export function Dashboard() {
 
   const [periodType, setPeriodType] = useState("monthly");
   const [upcomingTab, setUpcomingTab] = useState("payments");
+  const isMobile = useIsMobile();
 
   const [quickAddType, setQuickAddType] = useState(null);
 
@@ -448,7 +450,7 @@ export function Dashboard() {
   today.setHours(0, 0, 0, 0);
 
   const upcomingPayments = data.bills
-    .filter((bill) => !bill.paid)
+    .filter((bill) => !bill.paid && !bill.completed)
     .map((bill) => {
       const { daysOut, overdue } =
         computeBillStatus(bill, today);
@@ -535,7 +537,11 @@ export function Dashboard() {
 
       <div className="col-span-12 lg:col-span-9 space-y-5 min-w-0">
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="sm:hidden">
+          <KpiCarousel totalBalance={totalBalance} income={income} expense={expense} fmt={fmt} />
+        </div>
+
+        <div className="hidden sm:grid sm:grid-cols-3 gap-5">
 
           <Kpi
             label="Total Balance"
@@ -626,8 +632,967 @@ export function Dashboard() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.8fr)_minmax(280px,1fr)] gap-4 items-stretch">
+        {isMobile ? (
+          <>
+        <Card className="p-5">
 
+          <div className="flex items-center justify-between mb-4 gap-3">
+
+            <h3 className="type-section-title">
+              Upcoming
+            </h3>
+
+            <div className="flex items-center gap-1 rounded-full bg-white/[0.04] p-1 shrink-0">
+
+              <button
+                onClick={() => setUpcomingTab("payments")}
+                className={`text-[13px] font-semibold leading-none px-3 py-1.5 rounded-full transition-all duration-200 ${
+                  upcomingTab === "payments"
+                    ? "bg-accent text-bg"
+                    : `${theme.subtext} hover:text-white`
+                }`}
+              >
+                Bills
+              </button>
+
+              <button
+                onClick={() => setUpcomingTab("emi")}
+                className={`text-[13px] font-semibold leading-none px-3 py-1.5 rounded-full transition-all duration-200 ${
+                  upcomingTab === "emi"
+                    ? "bg-accent text-bg"
+                    : `${theme.subtext} hover:text-white`
+                }`}
+              >
+                EMI
+              </button>
+
+            </div>
+
+          </div>
+
+          {upcomingTab === "payments" && (
+
+            upcomingPayments.length === 0 ? (
+
+              <>
+                <EmptyState
+                  icon={(p) => (
+                    <AppIcon
+                      name="dashboard.upcoming"
+                      {...p}
+                    />
+                  )}
+                  title="No upcoming payments"
+                  subtitle="Nothing due in the next 5 days."
+                />
+
+                <button
+                  onClick={() =>
+                    setPage("bills")
+                  }
+                  className="forge-link type-button w-full text-center rounded-xl h-[42px] flex items-center justify-center border border-border bg-white/[0.02] hover:bg-white/[0.05] hover:border-border transition-all duration-200 mt-4"
+                >
+                  Manage Bills
+                </button>
+              </>
+
+            ) : (
+
+              <>
+
+                <div className="space-y-1.5">
+
+                  {upcomingPayments.map((p) => {
+
+                    const badge = badgeFor(p);
+                    const display = resolveBillDisplay(p);
+
+                    return (
+
+                      <div
+                        key={p.id}
+                        onClick={() =>
+                          setPage("bills")
+                        }
+                        className="group cursor-pointer rounded-xl border border-border-subtle bg-white/[0.02] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.05] hover:border-border hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)]"
+                      >
+
+                        <div className="flex items-center justify-between mb-1.5">
+
+                          <div className="flex items-center gap-3 min-w-0">
+
+                            {display.kind === "brand" ? (
+
+                              <ServiceLogo
+                                provider={display.providerId}
+                                size="sm"
+                              />
+
+                            ) : (
+
+                              <AppIcon
+                                name={display.icon}
+                                size="md"
+                                container
+                              />
+
+                            )}
+
+                            <div className="min-w-0">
+
+                              <p className="text-[15px] font-bold truncate">
+                                {p.name}
+                              </p>
+
+                            </div>
+
+                          </div>
+
+                          <span
+                            className={`text-[11px] font-bold leading-none px-2.5 py-1 rounded-full shrink-0 ${badge.cls}`}
+                          >
+                            {badge.label}
+                          </span>
+
+                        </div>
+
+                        <div className="flex items-center justify-between pl-[46px]">
+
+                          <p className={`type-small-label ${theme.subtext}`}>
+                            {statusLabel(p)}
+                          </p>
+
+                          <p className="text-[16px] font-bold tracking-[-0.01em]">
+                            {fmt(p.amount)}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                    );
+
+                  })}
+
+                </div>
+
+                <div
+                  className={`border-t mt-3 pt-3 ${theme.rowBorder}`}
+                >
+
+                  <button
+                    onClick={() =>
+                      setPage("bills")
+                    }
+                    className="forge-link type-button w-full text-center rounded-xl h-[42px] flex items-center justify-center border border-border bg-white/[0.02] hover:bg-white/[0.05] hover:border-border transition-all duration-200"
+                  >
+                    View All
+                  </button>
+
+                </div>
+
+              </>
+
+            )
+
+          )}
+
+          {upcomingTab === "emi" && (
+
+            upcomingEmiInstallments.length === 0 ? (
+
+              <EmptyState
+                icon={(p) => (
+                  <AppIcon
+                    name="ui.emi"
+                    {...p}
+                  />
+                )}
+                title="No EMI payments due soon"
+                subtitle="Nothing due in the next 5 days."
+              />
+
+            ) : (
+
+              <div className="space-y-1.5">
+
+                {upcomingEmiInstallments.map((inst) => {
+
+                  const plan = data.emiPlans.find(
+                    (p) => p.id === inst.emiPlanId
+                  );
+
+                  const txn = plan
+                    ? data.transactions.find(
+                        (t) => t.id === plan.transactionId
+                      )
+                    : null;
+
+                  const badge = badgeFor(inst);
+
+                  return (
+
+                    <div
+                      key={inst.id}
+                      onClick={() =>
+                        setPage("transactions")
+                      }
+                      className="group cursor-pointer rounded-xl border border-border-subtle bg-white/[0.02] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.05] hover:border-border hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)]"
+                    >
+
+                      <div className="flex items-center justify-between mb-1.5">
+
+                        <div className="flex items-center gap-3 min-w-0">
+
+                          <AppIcon
+                            name="ui.emi"
+                            size="md"
+                            container
+                          />
+
+                          <div className="min-w-0">
+
+                            <p className="text-[15px] font-bold truncate">
+                              {txn?.description ||
+                                txn?.category ||
+                                "EMI Payment"}
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                        <span
+                          className={`text-[11px] font-bold leading-none px-2.5 py-1 rounded-full shrink-0 ${badge.cls}`}
+                        >
+                          {badge.label}
+                        </span>
+
+                      </div>
+
+                      <div className="flex items-center justify-between pl-[46px]">
+
+                        <p className={`type-small-label ${theme.subtext}`}>
+                          Installment {inst.installmentNumber} of {plan?.tenureMonths || "—"}
+                        </p>
+
+                        <p className="text-[16px] font-bold tracking-[-0.01em]">
+                          {fmt(inst.amount)}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  );
+
+                })}
+
+              </div>
+
+            )
+
+          )}
+
+        </Card>
+
+        <Card className="p-5">
+
+          <h3 className="type-section-title mb-5">
+            Spending Breakdown
+          </h3>
+
+          {categorySpend.length === 0 ? (
+
+            <EmptyState
+              icon={(p) => (
+                <AppIcon
+                  name="dashboard.breakdown"
+                  {...p}
+                />
+              )}
+              title="No expenses yet"
+              subtitle="Add a transaction to see the breakdown"
+            />
+
+          ) : (
+
+            <>
+
+              <div className="relative h-48">
+
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                >
+
+                  <PieChart
+                    margin={{
+                      top: 0,
+                      right: 0,
+                      bottom: 0,
+                      left: 0
+                    }}
+                  >
+
+                    <Pie
+                      data={categorySpend}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={60}
+                      outerRadius={94}
+                      paddingAngle={3}
+                      cornerRadius={4}
+                    >
+
+                      {categorySpend.map(
+                        (_, i) => (
+                          <Cell
+                            key={i}
+                            fill={
+                              CHART_COLORS[
+                                i %
+                                  CHART_COLORS.length
+                              ]
+                            }
+                            stroke="none"
+                          />
+                        )
+                      )}
+
+                    </Pie>
+
+                    <Tooltip
+                      formatter={(v) =>
+                        fmt(v)
+                      }
+                      contentStyle={
+                        tooltipStyle
+                      }
+                    />
+
+                  </PieChart>
+
+                </ResponsiveContainer>
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+
+                  <p
+                    className={`type-small-label ${theme.subtext}`}
+                  >
+                    Total Spent
+                  </p>
+
+                  <p className="text-[15px] font-bold tracking-[-0.01em]">
+                    {fmt(
+                      categorySpend.reduce(
+                        (s, c) =>
+                          s + c.value,
+                        0
+                      )
+                    )}
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div className="space-y-2.5 mt-5">
+
+                {categorySpend
+                  .slice(0, 4)
+                  .map((c, i) => {
+
+                    const total =
+                      categorySpend.reduce(
+                        (s, x) =>
+                          s + x.value,
+                        0
+                      );
+
+                    const pct =
+                      total > 0
+                        ? Math.round(
+                            (c.value /
+                              total) *
+                              100
+                          )
+                        : 0;
+
+                    return (
+
+                      <div
+                        key={c.name}
+                        className="flex items-center justify-between gap-3"
+                      >
+
+                        <div className="flex items-center gap-2.5 min-w-0">
+
+                          <span
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{
+                              backgroundColor:
+                                CHART_COLORS[
+                                  i %
+                                    CHART_COLORS.length
+                                ]
+                            }}
+                          />
+
+                          <p className="type-body truncate">
+                            {c.name}
+                          </p>
+
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+
+                          <span
+                            className={`type-small-label ${theme.subtext}`}
+                          >
+                            {pct}%
+                          </span>
+
+                          <span className="type-body font-bold">
+                            {fmt(c.value)}
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                    );
+
+                  })}
+
+              </div>
+
+            </>
+
+          )}
+
+        </Card>
+
+          <Card className="p-5 sm:p-8 min-w-0">
+
+            <div className="flex items-center justify-between mb-4">
+
+              <h3 className="type-section-title">
+                Invoices
+              </h3>
+
+              <button
+                onClick={() =>
+                  setPage("invoices")
+                }
+                className="forge-link type-button text-accent flex items-center gap-0.5 hover:gap-1"
+              >
+                View all
+                <AppIcon name="ui.chevronRight" size={13} />
+              </button>
+
+            </div>
+
+            {invoiceSummary.totalCount === 0 ? (
+
+              <EmptyState
+                icon={(p) => (
+                  <AppIcon
+                    name="dashboard.invoices"
+                    {...p}
+                  />
+                )}
+                title="No invoices yet"
+                subtitle="Add an invoice to start tracking payments"
+              />
+
+            ) : (
+
+              <div className="space-y-3">
+
+                <button
+                  onClick={() =>
+                    setPage("invoices")
+                  }
+                  className="group w-full text-left rounded-2xl border border-border-subtle bg-white/[0.02] p-4 transition-all duration-200 hover:bg-white/[0.05] hover:border-border"
+                >
+
+                  <div className="flex items-center gap-3.5">
+
+                    <div className="forge-card-icon w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-danger/15">
+
+                      <AppIcon
+                        name="invoiceStates.unpaid"
+                        size={17}
+                        className="forge-card-icon__glyph text-danger"
+                      />
+
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+
+                      <p className={`type-small-label ${theme.subtext}`}>
+                        {invoiceSummary.unpaid.count} Unpaid
+                      </p>
+
+                      <p className="text-[22px] font-bold tracking-[-0.01em] text-danger mt-0.5">
+                        {fmt(
+                          invoiceSummary.unpaid.amount
+                        )}
+                      </p>
+
+                    </div>
+
+                    <AppIcon
+                      name="ui.chevronRight"
+                      size={16}
+                      className="shrink-0 opacity-40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:opacity-80"
+                    />
+
+                  </div>
+
+                  <p className={`type-small-label mt-2.5 ${theme.subtext}`}>
+                    Amount due from unpaid invoices
+                  </p>
+
+                </button>
+
+                <button
+                  onClick={() =>
+                    setPage("invoices")
+                  }
+                  className="group w-full text-left rounded-2xl border border-border-subtle bg-white/[0.02] p-4 transition-all duration-200 hover:bg-white/[0.05] hover:border-border"
+                >
+
+                  <div className="flex items-center gap-3.5">
+
+                    <div className="forge-card-icon w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-success/15">
+
+                      <AppIcon
+                        name="invoiceStates.paid"
+                        size={17}
+                        className="forge-card-icon__glyph text-success"
+                      />
+
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+
+                      <p className={`type-small-label ${theme.subtext}`}>
+                        {invoiceSummary.paid.count} Paid
+                      </p>
+
+                      <p className="text-[22px] font-bold tracking-[-0.01em] text-success mt-0.5">
+                        {fmt(
+                          invoiceSummary.paid.amount
+                        )}
+                      </p>
+
+                    </div>
+
+                    <AppIcon
+                      name="ui.chevronRight"
+                      size={16}
+                      className="shrink-0 opacity-40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:opacity-80"
+                    />
+
+                  </div>
+
+                  <p className={`type-small-label mt-2.5 ${theme.subtext}`}>
+                    Amount received from paid invoices
+                  </p>
+
+                </button>
+
+                <div className="rounded-2xl border border-border-subtle bg-white/[0.02] p-4">
+
+                  <div className="flex items-center gap-3.5">
+
+                    <div className="forge-card-icon w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white/[0.08]">
+
+                      <AppIcon
+                        name="invoiceStates.invoice"
+                        size={17}
+                        className="forge-card-icon__glyph"
+                      />
+
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+
+                      <p className={`type-small-label ${theme.subtext}`}>
+                        Total Invoices
+                      </p>
+
+                      <p className="text-[22px] font-bold tracking-[-0.01em] mt-0.5">
+                        {invoiceSummary.totalCount}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <p className={`type-small-label mt-2.5 ${theme.subtext}`}>
+                    All time invoices
+                  </p>
+
+                </div>
+
+              </div>
+
+            )}
+
+          </Card>
+
+          <Card className="p-5 sm:p-8 min-w-0">
+
+            <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
+
+              <div className="group relative flex items-center gap-1.5">
+
+                <h3 className="type-section-title">
+                  Cash Flow
+                </h3>
+
+                <span className="relative flex items-center">
+
+                  <AppIcon
+                    name="ui.info"
+                    size={13}
+                    className="cursor-help text-white/40 transition-colors group-hover:text-white/80"
+                  />
+
+                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 translate-y-1 rounded-xl border border-border bg-card/95 p-4 opacity-0 shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+
+                    <span className="block text-[13px] font-semibold text-white mb-1.5">
+                      What is Net Cash Flow?
+                    </span>
+
+                    <span className={`block text-[12px] leading-5 ${theme.subtext}`}>
+                      Income minus Expenses. This shows your actual activity for the selected period.
+                    </span>
+
+                  </span>
+
+                </span>
+
+              </div>
+
+              <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
+
+                <Select
+                  value={periodType}
+                  onChange={(e) =>
+                    handlePeriodTypeChange(
+                      e.target.value
+                    )
+                  }
+                  className={selectCls}
+                >
+                  <option value="monthly">
+                    Monthly
+                  </option>
+
+                  <option value="quarterly">
+                    Quarterly
+                  </option>
+
+                  <option value="yearly">
+                    Yearly
+                  </option>
+                </Select>
+
+                {periodType === "monthly" && (
+                  <>
+                    <Select
+                      value={monthSel.month}
+                      onChange={(e) =>
+                        setMonthSel((s) => ({
+                          ...s,
+                          month: Number(
+                            e.target.value
+                          )
+                        }))
+                      }
+                      className={selectCls}
+                    >
+                      {MONTH_NAMES.map((m, i) => (
+                        <option
+                          key={i}
+                          value={i}
+                        >
+                          {m}
+                        </option>
+                      ))}
+                    </Select>
+
+                    <Select
+                      value={monthSel.year}
+                      onChange={(e) =>
+                        setMonthSel((s) => ({
+                          ...s,
+                          year: Number(
+                            e.target.value
+                          )
+                        }))
+                      }
+                      className={selectCls}
+                    >
+                      {yearOptions.map((y) => (
+                        <option
+                          key={y}
+                          value={y}
+                        >
+                          {y}
+                        </option>
+                      ))}
+                    </Select>
+                  </>
+                )}
+
+                {periodType === "quarterly" && (
+                  <>
+                    <Select
+                      value={quarterSel.quarter}
+                      onChange={(e) =>
+                        setQuarterSel((s) => ({
+                          ...s,
+                          quarter: Number(
+                            e.target.value
+                          )
+                        }))
+                      }
+                      className={selectCls}
+                    >
+                      {[1, 2, 3, 4].map((q) => (
+                        <option
+                          key={q}
+                          value={q}
+                        >
+                          {`Q${q}`}
+                        </option>
+                      ))}
+                    </Select>
+
+                    <Select
+                      value={quarterSel.year}
+                      onChange={(e) =>
+                        setQuarterSel((s) => ({
+                          ...s,
+                          year: Number(
+                            e.target.value
+                          )
+                        }))
+                      }
+                      className={selectCls}
+                    >
+                      {yearOptions.map((y) => (
+                        <option
+                          key={y}
+                          value={y}
+                        >
+                          {y}
+                        </option>
+                      ))}
+                    </Select>
+                  </>
+                )}
+
+                {periodType === "yearly" && (
+                  <Select
+                    value={yearSel}
+                    onChange={(e) =>
+                      setYearSel(
+                        Number(e.target.value)
+                      )
+                    }
+                    className={selectCls}
+                  >
+                    {yearOptions.map((y) => (
+                      <option
+                        key={y}
+                        value={y}
+                      >
+                        {y}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+
+              </div>
+
+            </div>
+
+            <p className={`type-small-label mb-7 ${theme.subtext}`}>
+              See your actual cash flow activity this month.
+            </p>
+
+            <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+
+              <div className="h-64 sm:h-80 w-full lg:flex-1 min-w-0">
+
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                >
+                  <ComposedChart
+                    data={cashFlowData}
+                    barGap={6}
+                    margin={{
+                      top: 0,
+                      right: 0,
+                      bottom: 0,
+                      left: -8
+                    }}
+                  >
+                  <defs>
+  <linearGradient
+    id="incomeGradient"
+    x1="0"
+    y1="0"
+    x2="0"
+    y2="1"
+  >
+    <stop
+      offset="0%"
+      stopColor="var(--color-chart-1)"
+      stopOpacity={0.3}
+    />
+    <stop
+      offset="100%"
+      stopColor="var(--color-chart-1)"
+      stopOpacity={0}
+    />
+  </linearGradient>
+
+  <linearGradient
+    id="expenseGradient"
+    x1="0"
+    y1="0"
+    x2="0"
+    y2="1"
+  >
+    <stop
+      offset="0%"
+      stopColor="var(--color-chart-4)"
+      stopOpacity={0.45}
+    />
+    <stop
+      offset="100%"
+      stopColor="var(--color-chart-4)"
+      stopOpacity={0}
+    />
+  </linearGradient>
+</defs>
+
+                    <CartesianGrid
+                      strokeDasharray="2 4"
+                      stroke="var(--color-border-subtle)"
+                      vertical={false}
+                    />
+
+                    <XAxis
+                      dataKey="label"
+                      tickFormatter={(value) =>
+                        typeof value === "string" ? value.split(" ")[0] : value
+                      }
+                      tick={{
+                        fontSize: 12,
+                        fill: "var(--color-subtext)",
+                        fontFamily: "Mona Sans"
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+
+                    <YAxis
+                      domain={[
+                        yDomainMin,
+                        yDomainMax
+                      ]}
+                      allowDecimals={false}
+                      tick={{
+                        fontSize: 11,
+                        fill: "var(--color-subtext)",
+                        fontFamily: "Mona Sans"
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={48}
+                      tickFormatter={
+                        formatINRCompact
+                      }
+                    />
+
+                    <Tooltip
+                      content={
+                        <CashFlowTooltip />
+                      }
+                      cursor={{
+                        fill: "var(--color-accent-ambient)"
+                      }}
+                    />
+
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: 12,
+                        fontFamily: "Mona Sans",
+                        paddingTop: 8
+                      }}
+                    />
+
+                    <Area
+  type="monotone"
+  dataKey="Income"
+  stroke="var(--color-chart-1)"
+  strokeWidth={1.5}
+  fill="url(#incomeGradient)"
+  dot={false}
+  activeDot={{
+    r: 4,
+    strokeWidth: 0
+  }}
+/>
+
+<Area
+  type="monotone"
+  dataKey="Expenses"
+  stroke="var(--color-chart-4)"
+  strokeWidth={1.5}
+  fill="url(#expenseGradient)"
+  dot={false}
+  activeDot={{
+    r: 4,
+    strokeWidth: 0
+  }}
+/>
+
+                    <Line
+                      type="monotone"
+                      dataKey="Net Cash Flow"
+                      stroke="var(--color-warning)"
+                      strokeWidth={2.5}
+                      dot={{
+                        r: 3,
+                        fill: "var(--color-warning)",
+                        strokeWidth: 0
+                      }}
+                      activeDot={{ r: 5 }}
+                    />
+
+                  </ComposedChart>
+                </ResponsiveContainer>
+
+              </div>
+
+            </div>
+
+          </Card>
+
+          </>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.8fr)_minmax(280px,1fr)] gap-4 items-stretch">
           <Card className="p-5 sm:p-8 min-w-0">
 
             <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
@@ -1144,7 +2109,7 @@ export function Dashboard() {
 
           </Card>
 
-        </div>
+            </div>
 
         <Card className="p-5 sm:p-8 hidden lg:block">
 
@@ -1261,11 +2226,15 @@ export function Dashboard() {
 
         </Card>
 
+          </>
+        )}
+
       </div>
 
+      {!isMobile && (
       <div className="col-span-12 lg:col-span-3 lg:space-y-5 min-w-0">
 
-        <Card className="p-5 hidden lg:block">
+        <Card className="p-5">
 
           <div className="flex items-center justify-between mb-4 gap-3">
 
@@ -1527,6 +2496,7 @@ export function Dashboard() {
 
         </Card>
 
+
         <Card className="p-5">
 
           <h3 className="type-section-title mb-5">
@@ -1704,6 +2674,7 @@ export function Dashboard() {
 
         </Card>
 
+
         <Card className="p-5 hidden lg:block">
 
           <h3 className="type-section-title mb-4">
@@ -1819,7 +2790,10 @@ export function Dashboard() {
 
         </Card>
 
+
       </div>
+      )}
+
 
       {quickAddType && (
         <Modal title="Add Transaction" onClose={() => setQuickAddType(null)}>

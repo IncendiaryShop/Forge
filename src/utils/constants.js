@@ -1,5 +1,3 @@
-
-
 export const INCOME_CATEGORIES = [
   "Salary",
   "Freelance",
@@ -77,10 +75,10 @@ export const MOBILE_NAV_PRIMARY = [
   "dashboard",
   "transactions",
   "accounts",
-  "bills",
 ];
 
 export const MOBILE_NAV_MORE = [
+  "bills",
   "invoices",
   "goals",
 ];

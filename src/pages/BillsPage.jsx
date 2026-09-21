@@ -43,7 +43,7 @@ export function BillsPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const sorted = [...data.bills].sort((a, b) => a.dueDay - b.dueDay);
+  const sorted = [...data.bills].filter((b) => !b.completed).sort((a, b) => a.dueDay - b.dueDay);
 
   const activeEmiRows = (data.emiPlans || [])
     .filter((plan) => plan.status === "Active")

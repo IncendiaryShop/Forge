@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import {
   Card,
@@ -15,7 +15,7 @@ import {
 
 import { TransactionForm } from "../forms/TransactionForm";
 import { EmiConvertForm } from "../forms/EmiConvertForm";
-import { fmt } from "../utils/helpers";
+import { fmt, monthKey } from "../utils/helpers";
 import { sortTransactionsDesc } from "../utils/transactionUtils";
 
 export function TransactionsPage() {
@@ -25,6 +25,7 @@ export function TransactionsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [catFilter, setCatFilter] = useState("All");
+  const [selectedMonth, setSelectedMonth] = useState(() => monthKey(new Date().toISOString().slice(0, 10)));
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [emiModal, setEmiModal] = useState(null);
   const [emiScheduleForId, setEmiScheduleForId] = useState(null);
@@ -46,6 +47,14 @@ export function TransactionsPage() {
     return map;
   }, [data.emiPlans]);
 
+  const finalPaymentTxnIds = useMemo(() => {
+    const set = new Set();
+    data.bills.forEach((b) => {
+      if (b.completed && b.paidTransactionId) set.add(b.paidTransactionId);
+    });
+    return set;
+  }, [data.bills]);
+
   const isEmiEligible = (t) =>
     t.type === "Expense" && creditCardAccountIds.has(t.account) && !emiPlanByTxnId.has(t.id);
 
@@ -64,8 +73,29 @@ export function TransactionsPage() {
     setDeleteTarget(null);
   };
 
+  const availableMonths = useMemo(() => {
+    const keys = new Set(data.transactions.map((t) => monthKey(t.date)));
+    keys.add(monthKey(new Date().toISOString().slice(0, 10)));
+    return [...keys].sort().reverse();
+  }, [data.transactions]);
+
+  useEffect(() => {
+    if (!availableMonths.includes(selectedMonth)) {
+      setSelectedMonth(availableMonths[0]);
+    }
+  }, [availableMonths, selectedMonth]);
+
+  const monthIndex = availableMonths.indexOf(selectedMonth);
+  const goPrevMonth = () => {
+    if (monthIndex < availableMonths.length - 1) setSelectedMonth(availableMonths[monthIndex + 1]);
+  };
+  const goNextMonth = () => {
+    if (monthIndex > 0) setSelectedMonth(availableMonths[monthIndex - 1]);
+  };
+
   const filtered = useMemo(() => {
     const list = data.transactions
+      .filter((t) => monthKey(t.date) === selectedMonth)
       .filter(
         (t) => typeFilter === "All" || t.type === typeFilter
       )
@@ -87,6 +117,7 @@ export function TransactionsPage() {
     return sortTransactionsDesc(list);
   }, [
     data.transactions,
+    selectedMonth,
     search,
     typeFilter,
     catFilter,
@@ -94,7 +125,11 @@ export function TransactionsPage() {
   ]);
 
   const allCats = [
-    ...new Set(data.transactions.map((t) => t.category)),
+    ...new Set(
+      data.transactions
+        .filter((t) => monthKey(t.date) === selectedMonth)
+        .map((t) => t.category)
+    ),
   ];
 
   const exportCsv = () => {
@@ -118,7 +153,7 @@ export function TransactionsPage() {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "transactions.csv";
+    a.download = `transactions-${selectedMonth}.csv`;
     a.click();
 
     URL.revokeObjectURL(url);
@@ -135,6 +170,8 @@ export function TransactionsPage() {
     w-auto
     ${theme.input}
   `;
+
+  const periodSelectCls = `forge-control px-2.5 py-1.5 rounded-[10px] border text-[13px] outline-none w-auto min-w-0 truncate ${theme.input}`;
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -229,6 +266,60 @@ export function TransactionsPage() {
         </div>
       </div>
 
+      <div className="flex items-center justify-center gap-2">
+        <IconBtn
+          icon="ui.chevronLeft"
+          onClick={goPrevMonth}
+          disabled={monthIndex >= availableMonths.length - 1}
+          title="Previous month"
+        />
+
+        <Select
+          value={Number(selectedMonth.split("-")[1]) - 1}
+          onChange={(e) => {
+            const y = selectedMonth.split("-")[0];
+            const key = `${y}-${String(Number(e.target.value) + 1).padStart(2, "0")}`;
+            if (availableMonths.includes(key)) setSelectedMonth(key);
+          }}
+          className={periodSelectCls}
+        >
+          {Array.from({ length: 12 }, (_, i) => i).map((i) => (
+            <option
+              key={i}
+              value={i}
+              disabled={!availableMonths.includes(`${selectedMonth.split("-")[0]}-${String(i + 1).padStart(2, "0")}`)}
+            >
+              {new Date(2000, i, 1).toLocaleDateString("en-US", { month: "long" })}
+            </option>
+          ))}
+        </Select>
+
+        <Select
+          value={selectedMonth.split("-")[0]}
+          onChange={(e) => {
+            const y = e.target.value;
+            const m = selectedMonth.split("-")[1];
+            const monthsInYear = availableMonths.filter((k) => k.startsWith(y));
+            const key = monthsInYear.includes(`${y}-${m}`) ? `${y}-${m}` : monthsInYear[0];
+            setSelectedMonth(key);
+          }}
+          className={periodSelectCls}
+        >
+          {[...new Set(availableMonths.map((k) => k.split("-")[0]))].map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </Select>
+
+        <IconBtn
+          icon="ui.chevronRight"
+          onClick={goNextMonth}
+          disabled={monthIndex <= 0}
+          title="Next month"
+        />
+      </div>
+
       <div className="md:hidden">
         {filtered.length === 0 ? (
           <Card>
@@ -280,6 +371,11 @@ export function TransactionsPage() {
                         {emiPlanByTxnId.has(t.id) && (
                           <Badge className="!bg-accent/12 !text-accent !border-0 rounded-full px-2 py-0.5 text-[10px] font-normal leading-4 ml-1.5 align-middle">
                             EMI
+                          </Badge>
+                        )}
+                        {finalPaymentTxnIds.has(t.id) && (
+                          <Badge className="!bg-success/12 !text-success !border-0 rounded-full px-2 py-0.5 text-[10px] font-normal leading-4 ml-1.5 align-middle">
+                            Final Payment
                           </Badge>
                         )}
                       </p>
@@ -401,6 +497,11 @@ export function TransactionsPage() {
                               EMI
                             </Badge>
                           </span>
+                        )}
+                        {finalPaymentTxnIds.has(t.id) && (
+                          <Badge className="!bg-success/12 !text-success !border-0 rounded-full px-2.5 py-0.5 text-[11px] font-normal leading-5 shrink-0">
+                            Final Payment
+                          </Badge>
                         )}
 
                       </div>

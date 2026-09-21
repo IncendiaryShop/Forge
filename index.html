@@ -8,9 +8,19 @@
     <meta name="theme-color" content="#000000" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Forge</title>
+    <style>
+      @keyframes forge-splash-pulse {
+        0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(255,255,255,0)); opacity: 0.85; }
+        50% { transform: scale(1.05); filter: drop-shadow(0 0 14px rgba(255,255,255,0.25)); opacity: 1; }
+      }
+    </style>
   </head>
   <body style="background: #000000; margin: 0">
-    <div id="root"></div>
+    <div id="root">
+      <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000000;">
+        <img src="/forge_logo.svg" alt="" width="112" height="112" style="animation:forge-splash-pulse 1.6s ease-in-out infinite;" />
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

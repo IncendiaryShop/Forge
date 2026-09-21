@@ -4,7 +4,6 @@ import { NAV, MOBILE_NAV_MORE } from "../utils/constants";
 import { computeBillStatus } from "../utils/billCycle";
 import { AppIcon } from "./AppIcon";
 import { Modal } from "./Modal";
-import GlassCard from "./GlassCard";
 
 const navById = Object.fromEntries(
   NAV.map((item) => [item.id, item])
@@ -28,38 +27,25 @@ function NavButton({ item, active, onClick, badge }) {
         px-1
       "
     >
-      {active ? (
-  <GlassCard
-    className="
-      glass-card--active
-      flex
-      items-center
-      justify-center
-      w-[78%]
-      h-[calc(100%-16px)]
-      rounded-full
-      text-white
-    "
-  >
-    <span className="relative z-10 flex items-center justify-center">
-      <AppIcon name={item.icon} size={18} />
-    </span>
-  </GlassCard>
-) : (
-  <span
-    className="
-      flex
-      items-center
-      justify-center
-      w-[78%]
-      h-[calc(100%-16px)]
-      rounded-full
-      text-white/50
-    "
-  >
-    <AppIcon name={item.icon} size={18} />
-  </span>
-)}
+      <span
+        className={`
+          flex
+          items-center
+          justify-center
+          w-[99%]
+          h-[calc(100%-6px)]
+          rounded-full
+          transition-colors
+          duration-150
+          ${
+            active
+              ? "bg-white/10 text-white"
+              : "text-white/50"
+          }
+        `}
+      >
+        <AppIcon name={item.icon} size={18} />
+      </span>
 
       {badge > 0 && !active && (
         <span
@@ -177,13 +163,6 @@ export function MobileNav() {
               onClick={() => goTo("accounts")}
             />
 
-            <NavButton
-              item={navById["bills"]}
-              active={page === "bills"}
-              onClick={() => goTo("bills")}
-              badge={billsDueSoon}
-            />
-
             <button
               type="button"
               onClick={() => setMoreOpen(true)}
@@ -208,14 +187,14 @@ export function MobileNav() {
                   flex
                   items-center
                   justify-center
-                  w-[78%]
-                  h-[calc(100%-16px)]
+                  w-[99%]
+                  h-[calc(100%-6px)]
                   rounded-full
                   transition-all
                   duration-200
                   ${
                     moreIsActive
-                      ? "bg-accent text-bg"
+                      ? "bg-white/10 text-white"
                       : "text-white/50"
                   }
                 `}

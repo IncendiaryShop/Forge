@@ -13,6 +13,8 @@ const fromRow = (r) => ({
   account: r.account_id || "",
   paidCycle: r.paid_cycle,
   paidTransactionId: r.paid_transaction_id,
+  lastBillDate: r.last_bill_date || "",
+  completed: !!r.completed,
 });
 
 const toRow = (b) => ({
@@ -23,6 +25,7 @@ const toRow = (b) => ({
   recurring: b.recurring !== false,
   provider: b.provider || null,
   account_id: b.account || null,
+  last_bill_date: b.lastBillDate || null,
 });
 
 export async function listBills() {

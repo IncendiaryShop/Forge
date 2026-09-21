@@ -17,7 +17,7 @@ import { MobileBrandHeader } from "./components/MobileBrandHeader";
 import { Modal } from "./components/Modal";
 import { PrimaryButton } from "./components/PrimaryButton";
 import { ScrollBounceBoundary } from "./components/ScrollBounceBoundary";
-import { SplashScreen } from "./components/SplashScreen";
+import { StartupSplash } from "./components/StartupSplash";
 import { TransactionForm } from "./forms/TransactionForm";
 import { Dashboard } from "./pages/Dashboard";
 import { TransactionsPage } from "./pages/TransactionsPage";
@@ -65,7 +65,7 @@ function ErrorBanner({ message, onDismiss }) {
   );
 }
 
-function AuthenticatedApp({ userId, onSignOut, isDemoMode = false, onCreateAccount }) {
+function AuthenticatedApp({ userId, onSignOut, isDemoMode = false, onCreateAccount, onDataStatusChange }) {
 
   const accountsSvc = isDemoMode ? demoSvc : realAccountsSvc;
   const txnSvc = isDemoMode ? demoSvc : realTxnSvc;
@@ -131,6 +131,12 @@ function AuthenticatedApp({ userId, onSignOut, isDemoMode = false, onCreateAccou
   useEffect(() => {
     document.title = `${PAGE_TITLES[page]} • Forge`;
   }, [page]);
+
+  // Report data status upward so the app-level startup splash knows
+  // whether initial data loading is still in progress.
+  useEffect(() => {
+    onDataStatusChange?.(dataStatus);
+  }, [dataStatus, onDataStatusChange]);
 
   useEffect(() => {
     queueMicrotask(loadAll);
@@ -617,7 +623,9 @@ function AuthenticatedApp({ userId, onSignOut, isDemoMode = false, onCreateAccou
   };
 
   if (dataStatus === "loading") {
-    return <SplashScreen />;
+    // The app-level StartupSplash (rendered by Gate) covers the screen
+    // during this phase, so nothing needs to be rendered here.
+    return null;
   }
 
   if (dataStatus === "error") {
@@ -681,6 +689,20 @@ function Gate() {
     }
   });
 
+  // Lifted phase state from MigrationGate/AuthenticatedApp so a single
+  // top-level StartupSplash can stay mounted across auth, migration and
+  // data-loading without ever unmounting/remounting (and re-triggering
+  // its animation).
+  const [migrationPhase, setMigrationPhase] = useState("checking");
+  const [dataStatus, setDataStatus] = useState("loading");
+
+  useEffect(() => {
+    if (status === "signed-in") {
+      setMigrationPhase("checking");
+      setDataStatus("loading");
+    }
+  }, [status, user?.id]);
+
   const enterDemo = () => {
     try {
       sessionStorage.setItem(DEMO_FLAG_KEY, "1");
@@ -700,18 +722,47 @@ function Gate() {
     setDemoActive(false);
   };
 
-  if (demoActive) {
-    return <AuthenticatedApp userId={DEMO_USER_ID} onSignOut={exitDemo} isDemoMode onCreateAccount={exitDemo} />;
-  }
+  // Migration/data phases that require the user's attention (an error,
+  // or an ambiguous-data choice) must be shown, not hidden behind the
+  // splash. Everything else stays behind the splash until ready.
+  const migrationNeedsAttention = migrationPhase === "ambiguous" || migrationPhase === "error";
+  const dataReadyOrError = dataStatus === "ready" || dataStatus === "error";
 
-  if (status === "loading") return <SplashScreen />;
-  if (status === "recovery") return <ResetPasswordScreen />;
-  if (status === "signed-out") return <AuthGate onExploreDemo={enterDemo} />;
+  let content = null;
+  let splashActive = true;
+
+  if (demoActive) {
+    content = (
+      <AuthenticatedApp
+        userId={DEMO_USER_ID}
+        onSignOut={exitDemo}
+        isDemoMode
+        onCreateAccount={exitDemo}
+        onDataStatusChange={setDataStatus}
+      />
+    );
+    splashActive = !dataReadyOrError;
+  } else if (status === "recovery") {
+    content = <ResetPasswordScreen />;
+    splashActive = false;
+  } else if (status === "signed-out") {
+    content = <AuthGate onExploreDemo={enterDemo} />;
+    splashActive = false;
+  } else if (status === "signed-in") {
+    content = (
+      <MigrationGate userId={user.id} onPhaseChange={setMigrationPhase}>
+        <AuthenticatedApp userId={user.id} onSignOut={signOut} onDataStatusChange={setDataStatus} />
+      </MigrationGate>
+    );
+    splashActive = !(migrationNeedsAttention || dataReadyOrError);
+  }
+  // status === "loading": content stays null, splash stays active.
 
   return (
-    <MigrationGate userId={user.id}>
-      <AuthenticatedApp userId={user.id} onSignOut={signOut} />
-    </MigrationGate>
+    <>
+      {content}
+      <StartupSplash active={splashActive} />
+    </>
   );
 }
 

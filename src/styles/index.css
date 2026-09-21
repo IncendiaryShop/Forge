@@ -306,6 +306,39 @@ select {
   animation: forge-splash-pulse 1.6s ease-in-out infinite;
 }
 
+.forge-splash-loader {
+  --color-1: rgba(255, 255, 255, 0.3);
+  --color-2: #ffffff;
+  --size: 0.85px;
+
+  position: relative;
+  width: calc(55 * var(--size));
+  height: calc(55 * var(--size));
+}
+
+.forge-splash-loader:before,
+.forge-splash-loader:after {
+  content: '';
+  border-radius: 50%;
+  position: absolute;
+  inset: 0;
+  box-shadow: 0 0 calc(10 * var(--size)) calc(2 * var(--size)) var(--color-1) inset;
+}
+
+.forge-splash-loader:after {
+  box-shadow: 0 calc(2 * var(--size)) 0 var(--color-2) inset;
+  animation: forge-splash-loader-rotate 2s linear infinite;
+}
+
+@keyframes forge-splash-loader-rotate {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .forge-safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }

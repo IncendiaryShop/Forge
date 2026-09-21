@@ -43,3 +43,5 @@ export { ManageClientsModal } from "./ManageClientsModal";
 export { KpiCarousel } from "./KpiCarousel";
 
 export { SplashScreen } from "./SplashScreen";
+
+export { StartupSplash } from "./StartupSplash";

@@ -14,11 +14,18 @@ function Screen({ title, children }) {
   );
 }
 
-export function MigrationGate({ userId, children }) {
+export function MigrationGate({ userId, children, onPhaseChange }) {
 
   const [phase, setPhase] = useState("checking");
   const [ambiguousLocal, setAmbiguousLocal] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Report the current phase upward so the app-level startup splash
+  // knows whether migration is still running silently, or has reached
+  // a state (ambiguous/error) that needs to be shown to the user.
+  useEffect(() => {
+    onPhaseChange?.(phase);
+  }, [phase, onPhaseChange]);
 
   const run = useCallback(async () => {
     setPhase("checking");
